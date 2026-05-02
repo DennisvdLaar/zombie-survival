@@ -214,7 +214,7 @@
                 </svg>
             </div>
             <div class="label">Shotgun</div>
-            <div class="cost">🪙 100</div>
+            <div class="cost">🪙 150</div>
         </div>
         <div class="shop-item" id="buy-machinegun" title="Machine Gun Turret - 250 coins">
             <div class="gun-display">
@@ -228,7 +228,7 @@
                 </svg>
             </div>
             <div class="label">MG</div>
-            <div class="cost">🪙 250</div>
+            <div class="cost">🪙 200</div>
         </div>
         <div class="shop-item" id="buy-sniper" title="Sniper Turret - 500 coins (sees hidden zombies!)">
             <div class="gun-display">
@@ -243,7 +243,7 @@
                 </svg>
             </div>
             <div class="label">Sniper</div>
-            <div class="cost">🪙 500</div>
+            <div class="cost">🪙 400</div>
         </div>
     </div>
 
@@ -2112,10 +2112,20 @@
     const TURRET_COLLISION = 1.2;
 
     const turretStats = {
-        shotgun:    { cost: 100, fireRate: 45, range: 4, damage: 25, type: 'shotgun' },
-        machinegun: { cost: 250, fireRate: 1, range: 7, damage: 6, type: 'machinegun' },
-        sniper:     { cost: 500, fireRate: 120, range: 12, damage: 150, type: 'sniper' }
+        shotgun:    { cost: 150, fireRate: 45, range: 4, damage: 20, type: 'shotgun', pellets: 6 },
+        machinegun: { cost: 200, fireRate: 60, range: 7, damage: 5, type: 'machinegun' },
+        sniper:     { cost: 400, fireRate: 120, range: 12, damage: 250, type: 'sniper' }
     };
+    // Upgrade definitions: [cost, stats to merge]
+    const mgUpgrades = [
+        { cost: 150, damage: 7, fireRate: 60, label: 'MG Lv2: 7 dmg' },
+        { cost: 300, damage: 6, fireRate: 30, label: 'MG Lv3: 2 bps' },
+        { cost: 600, damage: 7, fireRate: 20, label: 'MG Lv4: 3 bps' }
+    ];
+    const shotgunUpgrades = [
+        { cost: 200, damage: 25, pellets: 8, label: 'SG Lv2: 8 pellets' },
+        { cost: 700, damage: 30, pellets: 12, burstCount: 3, label: 'SG Lv3: Triple burst' }
+    ];
 
     function startPlacement(type) {
         const stats = turretStats[type];
@@ -2240,7 +2250,7 @@
         coins -= stats.cost;
         const mesh = (placementType === 'machinegun') ? createMGTurretMesh(mouseWorld.x, mouseWorld.z) : (placementType === 'sniper') ? createSniperTurretMesh(mouseWorld.x, mouseWorld.z) : createTurretMesh(mouseWorld.x, mouseWorld.z);
         mesh.rotation.y = placementRotation;
-        turrets.push({ x: mouseWorld.x, z: mouseWorld.z, mesh, fireTimer: 0, fireRate: stats.fireRate, range: stats.range, damage: stats.damage, facing: placementRotation, type: stats.type, recoilTimer: 0, hp: 100 });
+        turrets.push({ x: mouseWorld.x, z: mouseWorld.z, mesh, fireTimer: 0, fireRate: stats.fireRate, range: stats.range, damage: stats.damage, facing: placementRotation, type: stats.type, recoilTimer: 0, hp: 100, upgradeLevel: 0, pellets: stats.pellets || 1, burstCount: 1, burstFired: 0, burstCooldown: 0 });
         updateHUD();
     }
 
@@ -2310,6 +2320,34 @@
     renderer.domElement.addEventListener('mousedown', e => {
         if (e.button === 0 && placementMode) {
             confirmPlacement();
+        }
+    });
+
+    // Right click to upgrade turret
+    renderer.domElement.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        if (!game.running || placementMode) return;
+        // Find turret near mouse
+        for (const t of turrets) {
+            if (dist2D(mouseWorld.x, mouseWorld.z, t.x, t.z) < 1.5) {
+                let upgrades, level;
+                if (t.type === 'machinegun') { upgrades = mgUpgrades; level = t.upgradeLevel; }
+                else if (t.type === 'shotgun') { upgrades = shotgunUpgrades; level = t.upgradeLevel; }
+                else continue;
+                if (level >= upgrades.length) continue; // max level
+                const up = upgrades[level];
+                if (coins < up.cost) continue;
+                coins -= up.cost;
+                t.upgradeLevel++;
+                if (up.damage !== undefined) t.damage = up.damage;
+                if (up.fireRate !== undefined) t.fireRate = up.fireRate;
+                if (up.pellets !== undefined) t.pellets = up.pellets;
+                if (up.burstCount !== undefined) t.burstCount = up.burstCount;
+                // Visual feedback: flash turret green
+                t.mesh.traverse(c => { if (c.isMesh) { const orig = c.material.color.getHex(); c.material.color.set(0x44ff44); setTimeout(() => c.material.color.set(orig), 200); }});
+                updateHUD();
+                break;
+            }
         }
     });
 
@@ -2944,11 +2982,11 @@
         const hole = spawnHoles[Math.floor(Math.random() * spawnHoles.length)];
         const x = hole.x + (Math.random() - 0.5) * 1.5;
         const z = hole.z + (Math.random() - 0.5) * 1.5;
-        const speed = 0.06 + Math.random() * 0.03 + game.wave * 0.004;
+        const speed = 0.06 + Math.random() * 0.03;
         const mesh = createZombieMesh();
         mesh.position.set(x, -1.8, z); // start underground
         zombieMeshes.push(mesh);
-        const baseHp = Math.max(50 + game.wave * 10, game.wave >= 4 ? 150 : 0);
+        const baseHp = 100;
         zombies.push({ x, z, speed, mesh, path: null, pathIndex: 0, pathTimer: 0, attacking: false, hp: baseHp, attackPhase: 'idle', attackTimer: 0, rising: true, riseTimer: 0 });
     }
 
@@ -2971,7 +3009,7 @@
         const mesh = createFastZombieMesh();
         mesh.position.set(x, -1.2, z);
         zombieMeshes.push(mesh);
-        const baseHp = Math.max(30 + game.wave * 5, game.wave >= 4 ? 80 : 0);
+        const baseHp = 60;
         zombies.push({ x, z, speed: 0.19, mesh, path: null, pathIndex: 0, pathTimer: 0, attacking: false, hp: baseHp, attackPhase: 'idle', attackTimer: 0, rising: true, riseTimer: 0, fast: true });
     }
 
@@ -2990,7 +3028,7 @@
         });
         mesh.position.set(x, -1.8, z);
         zombieMeshes.push(mesh);
-        const baseHp = Math.max(40 + game.wave * 8, 100);
+        const baseHp = 100;
         zombies.push({ x, z, speed: 0.07 + Math.random() * 0.02, mesh, path: null, pathIndex: 0, pathTimer: 0, attacking: false, hp: baseHp, attackPhase: 'idle', attackTimer: 0, rising: true, riseTimer: 0, stealth: true });
     }
 
@@ -3044,11 +3082,11 @@
         if (!tankHole) return;
         const x = tankHole.x + (Math.random() - 0.5) * 1.5;
         const z = tankHole.z + (Math.random() - 0.5) * 1.5;
-        const speed = 0.06 + Math.random() * 0.03 + game.wave * 0.004;
+        const speed = 0.06 + Math.random() * 0.03;
         const mesh = createZombieMesh();
         mesh.position.set(x, -1.8, z);
         zombieMeshes.push(mesh);
-        const baseHp = Math.max(50 + game.wave * 10, game.wave >= 4 ? 150 : 0);
+        const baseHp = 100;
         // These zombies enter through the side breach, mark them
         zombies.push({ x, z, speed, mesh, path: null, pathIndex: 0, pathTimer: 0, attacking: false, hp: baseHp, attackPhase: 'idle', attackTimer: 0, rising: true, riseTimer: 0, useBreach: false, fromSide: true });
     }
@@ -3126,7 +3164,7 @@
             // Rise from ground animation
             if (z.rising) {
                 z.riseTimer++;
-                const riseDuration = z.tank ? 45 : z.big ? 30 : z.fast ? 15 : 20;
+                const riseDuration = Math.round((z.tank ? 45 : z.big ? 30 : z.fast ? 15 : 20) / 0.75);
                 const startY = z.tank ? -3.5 : z.big ? -2.5 : z.fast ? -1.0 : -1.8;
                 const p = Math.min(z.riseTimer / riseDuration, 1);
                 z.mesh.position.y = startY + p * Math.abs(startY);
@@ -3488,6 +3526,13 @@
                     if (gun.position.z > -0.2) gun.position.z = -0.2;
                 }
             }
+            // Handle burst cooldown
+            if (turret.burstCooldown > 0) {
+                turret.burstCooldown--;
+                if (turret.burstCooldown === 0 && turret.burstFired > 0) {
+                    turret.fireTimer = turret.fireRate; // trigger another shot immediately
+                }
+            }
             turret.fireTimer++;
             if (turret.fireTimer >= turret.fireRate) {
                 // Find nearest target in range AND within cone
@@ -3501,21 +3546,31 @@
                     while (diff < -Math.PI) diff += Math.PI * 2;
                     return Math.abs(diff) <= halfConeCheck;
                 }
+                // Sniper prioritizes hidden zombies
+                let closestHiddenDist = Infinity;
+                let closestHidden = null;
                 zombies.forEach(z => {
                     if (z.stealth && turret.type !== 'sniper') return;
                     const d = dist2D(turret.x, turret.z, z.x, z.z);
-                    if (d < turret.range && d < closestDist && inCone(z.x, z.z)) { closestDist = d; closestTarget = { x: z.x, z: z.z }; }
+                    if (d < turret.range && inCone(z.x, z.z)) {
+                        if (turret.type === 'sniper' && z.stealth && d < closestHiddenDist) {
+                            closestHiddenDist = d; closestHidden = { x: z.x, z: z.z };
+                        }
+                        if (d < closestDist) { closestDist = d; closestTarget = { x: z.x, z: z.z }; }
+                    }
                 });
+                if (closestHidden) closestTarget = closestHidden;
                 if (!closestTarget && necromancer && necromancer.alive && dist2D(turret.x, turret.z, necromancer.x, necromancer.z) < turret.range && inCone(necromancer.x, necromancer.z)) {
                     closestTarget = { x: necromancer.x, z: necromancer.z };
                 }
                 if (closestTarget) {
                     turret.fireTimer = 0;
 
-                    // MG: rotate gun toward target
-                    if (turret.type === 'machinegun') {
+                    // MG and Sniper: rotate gun toward target
+                    if (turret.type === 'machinegun' || turret.type === 'sniper') {
                         let aimAngle = Math.atan2(closestTarget.x - turret.x, closestTarget.z - turret.z);
                         turret.mesh.rotation.y = aimAngle;
+                        turret.facing = aimAngle;
                     }
 
                     const gun = turret.mesh.userData.gunGroup;
@@ -3582,9 +3637,10 @@
                             maxRange: turret.range
                         });
                     } else {
-                        // Shotgun pellets (8 projectiles)
+                        // Shotgun pellets
                         const halfConeSpread = Math.PI / 6;
-                        for (let p = 0; p < 8; p++) {
+                        const numPellets = turret.pellets || 6;
+                        for (let p = 0; p < numPellets; p++) {
                             const pellet = new THREE.Mesh(pelletGeom, pelletMat);
                             const randomAngle = turret.facing + (Math.random() - 0.5) * 2 * halfConeSpread;
                             const verticalSpread = (Math.random() - 0.5) * 0.25;
@@ -3603,6 +3659,13 @@
                                 startZ: muzzleZ,
                                 maxRange: turret.range
                             });
+                        }
+                        // Handle burst fire (triple magazine)
+                        if (turret.burstCount > 1 && turret.burstFired < turret.burstCount - 1) {
+                            turret.burstFired++;
+                            turret.burstCooldown = 8; // small delay between bursts
+                        } else {
+                            turret.burstFired = 0;
                         }
                     }
                 }
@@ -3722,13 +3785,13 @@
         }
         // Update shop item availability
         const btn = document.getElementById('buy-turret');
-        if (coins >= 100) btn.classList.remove('locked');
+        if (coins >= 150) btn.classList.remove('locked');
         else btn.classList.add('locked');
         const btn2 = document.getElementById('buy-machinegun');
-        if (coins >= 250) btn2.classList.remove('locked');
+        if (coins >= 200) btn2.classList.remove('locked');
         else btn2.classList.add('locked');
         const btn3 = document.getElementById('buy-sniper');
-        if (coins >= 500) btn3.classList.remove('locked');
+        if (coins >= 400) btn3.classList.remove('locked');
         else btn3.classList.add('locked');
     }
 
