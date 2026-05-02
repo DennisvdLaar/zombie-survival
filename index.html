@@ -212,6 +212,21 @@
             <div class="label">MG</div>
             <div class="cost">🪙 250</div>
         </div>
+        <div class="shop-item" id="buy-sniper" title="Sniper Turret - 500 coins (sees hidden zombies!)">
+            <div class="gun-display">
+                <svg class="gun-svg" viewBox="0 0 60 24" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="11" width="18" height="5" rx="1" fill="#4a2a10"/><!-- stock -->
+                    <rect x="18" y="9" width="16" height="7" rx="1" fill="#1a1a1a"/><!-- receiver -->
+                    <rect x="32" y="11" width="26" height="2.5" rx="1" fill="#222"/><!-- long barrel -->
+                    <rect x="55" y="10" width="4" height="4.5" rx="1" fill="#333"/><!-- suppressor -->
+                    <rect x="20" y="5" width="14" height="3.5" rx="1.5" fill="#1a1a1a"/><!-- scope -->
+                    <circle cx="33" cy="6.5" r="1.5" fill="#00ccff"/><!-- scope lens -->
+                    <rect x="26" y="16" width="3" height="5" rx="0.5" fill="#333"/><!-- mag -->
+                </svg>
+            </div>
+            <div class="label">Sniper</div>
+            <div class="cost">🪙 500</div>
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -357,6 +372,50 @@
         boltGain.gain.exponentialRampToValueAtTime(0.01, t + 0.04);
         bolt.connect(boltGain); boltGain.connect(audioCtx.destination);
         bolt.start(t + 0.01); bolt.stop(t + 0.04);
+    }
+
+    function playSniperSound() {
+        const t = audioCtx.currentTime;
+        // Deep heavy crack
+        const crackSize = audioCtx.sampleRate * 0.04;
+        const crackBuf = audioCtx.createBuffer(1, crackSize, audioCtx.sampleRate);
+        const crackData = crackBuf.getChannelData(0);
+        for (let i = 0; i < crackSize; i++) {
+            crackData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / crackSize, 1.5);
+        }
+        const crack = audioCtx.createBufferSource();
+        crack.buffer = crackBuf;
+        const crackGain = audioCtx.createGain();
+        crackGain.gain.setValueAtTime(0.6, t);
+        crackGain.gain.exponentialRampToValueAtTime(0.01, t + 0.08);
+        crack.connect(crackGain); crackGain.connect(audioCtx.destination);
+        crack.start(t); crack.stop(t + 0.08);
+        // Low boom
+        const boom = audioCtx.createOscillator();
+        boom.type = 'sine';
+        boom.frequency.setValueAtTime(80, t);
+        boom.frequency.exponentialRampToValueAtTime(30, t + 0.15);
+        const boomGain = audioCtx.createGain();
+        boomGain.gain.setValueAtTime(0.5, t);
+        boomGain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+        boom.connect(boomGain); boomGain.connect(audioCtx.destination);
+        boom.start(t); boom.stop(t + 0.15);
+        // Echo/tail
+        const echoSize = audioCtx.sampleRate * 0.1;
+        const echoBuf = audioCtx.createBuffer(1, echoSize, audioCtx.sampleRate);
+        const echoData = echoBuf.getChannelData(0);
+        for (let i = 0; i < echoSize; i++) {
+            echoData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / echoSize, 4) * 0.3;
+        }
+        const echo = audioCtx.createBufferSource();
+        echo.buffer = echoBuf;
+        const echoLP = audioCtx.createBiquadFilter();
+        echoLP.type = 'lowpass'; echoLP.frequency.value = 800;
+        const echoGain = audioCtx.createGain();
+        echoGain.gain.setValueAtTime(0.2, t + 0.05);
+        echoGain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+        echo.connect(echoLP); echoLP.connect(echoGain); echoGain.connect(audioCtx.destination);
+        echo.start(t + 0.05); echo.stop(t + 0.2);
     }
 
     const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 100);
@@ -1944,6 +2003,80 @@
         return group;
     }
 
+    function createSniperTurretMesh(x, z) {
+        const group = new THREE.Group();
+        const metalDark = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.8, roughness: 0.3 });
+        const metalMid = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.7, roughness: 0.4 });
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0x4a2a10, roughness: 0.7 });
+
+        // === TALL TRIPOD ===
+        const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.06, 8), metalMid);
+        hub.position.y = 1.1; group.add(hub);
+        for (let i = 0; i < 3; i++) {
+            const angle = (i / 3) * Math.PI * 2 - Math.PI / 6;
+            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.028, 1.2, 5), metalMid);
+            leg.position.set(Math.sin(angle) * 0.3, 0.55, Math.cos(angle) * 0.3);
+            leg.rotation.x = Math.cos(angle) * 0.3;
+            leg.rotation.z = Math.sin(angle) * 0.3;
+            group.add(leg);
+            const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, 0.03, 6), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 1 }));
+            foot.position.set(Math.sin(angle) * 0.5, 0.02, Math.cos(angle) * 0.5);
+            group.add(foot);
+        }
+        const pivot = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), metalMid);
+        pivot.position.y = 1.15; group.add(pivot);
+
+        // === SNIPER RIFLE ===
+        const gunGroup = new THREE.Group();
+        gunGroup.position.set(0, 1.18, -0.2);
+
+        // Receiver
+        const receiver = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.08, 0.4), metalDark);
+        gunGroup.add(receiver);
+        // Long barrel
+        const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 1.1, 8), metalDark);
+        barrel.rotation.x = -Math.PI / 2;
+        barrel.position.set(0, 0.01, 0.7); gunGroup.add(barrel);
+        // Suppressor tip
+        const suppressor = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.15, 8), metalMid);
+        suppressor.rotation.x = -Math.PI / 2;
+        suppressor.position.set(0, 0.01, 1.3); gunGroup.add(suppressor);
+        // Scope
+        const scopeTube = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.28, 8), metalDark);
+        scopeTube.rotation.x = -Math.PI / 2;
+        scopeTube.position.set(0, 0.07, 0.05); gunGroup.add(scopeTube);
+        // Scope lenses (glowing blue)
+        const lensMat = new THREE.MeshBasicMaterial({ color: 0x00ccff });
+        const lensFront = new THREE.Mesh(new THREE.CircleGeometry(0.024, 8), lensMat);
+        lensFront.rotation.x = -Math.PI / 2;
+        lensFront.position.set(0, 0.07, 0.19); lensFront.rotation.order = 'YXZ'; lensFront.rotation.x = 0; gunGroup.add(lensFront);
+        const lensBack = new THREE.Mesh(new THREE.CircleGeometry(0.02, 8), lensMat);
+        lensBack.position.set(0, 0.07, -0.09); gunGroup.add(lensBack);
+        // Scope glow light
+        const scopeLight = new THREE.PointLight(0x00ccff, 0.5, 2);
+        scopeLight.position.set(0, 0.07, 0.15); gunGroup.add(scopeLight);
+        // Stock
+        const stock = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.09, 0.35), woodMat);
+        stock.position.set(0, -0.01, -0.35); gunGroup.add(stock);
+        // Magazine
+        const mag = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.1, 0.06), metalMid);
+        mag.position.set(0, -0.09, 0); gunGroup.add(mag);
+        // Bipod (front support)
+        for (let s = -1; s <= 1; s += 2) {
+            const bipod = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.01, 0.3, 4), metalMid);
+            bipod.position.set(s * 0.04, -0.15, 0.35);
+            bipod.rotation.z = s * 0.3;
+            gunGroup.add(bipod);
+        }
+
+        group.add(gunGroup);
+        group.userData.gunGroup = gunGroup;
+        group.scale.set(1.7, 1.7, 1.7);
+        group.position.set(x, 0, z);
+        scene.add(group);
+        return group;
+    }
+
     // === PLACEMENT MODE ===
     let placementMode = false;
     let placementGhost = null;
@@ -1959,7 +2092,8 @@
 
     const turretStats = {
         shotgun:    { cost: 100, fireRate: 45, range: 4, damage: 25, type: 'shotgun' },
-        machinegun: { cost: 250, fireRate: 1, range: 7, damage: 6, type: 'machinegun' }
+        machinegun: { cost: 250, fireRate: 1, range: 7, damage: 6, type: 'machinegun' },
+        sniper:     { cost: 500, fireRate: 120, range: 18, damage: 150, type: 'sniper' }
     };
 
     function startPlacement(type) {
@@ -1970,7 +2104,7 @@
         placementRotation = 0;
         document.getElementById('blueprint-legend').style.display = 'block';
         // Create ghost (blueprint) turret
-        placementGhost = (type === 'machinegun') ? createMGTurretMesh(0, 0) : createTurretMesh(0, 0);
+        placementGhost = (type === 'machinegun') ? createMGTurretMesh(0, 0) : (type === 'sniper') ? createSniperTurretMesh(0, 0) : createTurretMesh(0, 0);
         // Make it semi-transparent blue
         placementGhost.traverse(child => {
             if (child.isMesh) {
@@ -2083,7 +2217,7 @@
         document.getElementById('blueprint-legend').style.display = 'none';
         const stats = turretStats[placementType];
         coins -= stats.cost;
-        const mesh = (placementType === 'machinegun') ? createMGTurretMesh(mouseWorld.x, mouseWorld.z) : createTurretMesh(mouseWorld.x, mouseWorld.z);
+        const mesh = (placementType === 'machinegun') ? createMGTurretMesh(mouseWorld.x, mouseWorld.z) : (placementType === 'sniper') ? createSniperTurretMesh(mouseWorld.x, mouseWorld.z) : createTurretMesh(mouseWorld.x, mouseWorld.z);
         mesh.rotation.y = placementRotation;
         turrets.push({ x: mouseWorld.x, z: mouseWorld.z, mesh, fireTimer: 0, fireRate: stats.fireRate, range: stats.range, damage: stats.damage, facing: placementRotation, type: stats.type, recoilTimer: 0, hp: 100 });
         updateHUD();
@@ -2125,12 +2259,12 @@
             }
         }
         if (hovered) {
-            const maxHp = hovered.tank ? 800 : hovered.big ? 290 : hovered.fast ? Math.max(30 + game.wave * 5, 80) : Math.max(50 + game.wave * 10, 150);
+            const maxHp = hovered.tank ? 800 : hovered.big ? 290 : hovered.fast ? Math.max(30 + game.wave * 5, 80) : hovered.stealth ? Math.max(40 + game.wave * 8, 100) : Math.max(50 + game.wave * 10, 150);
             const pct = Math.max(0, hovered.hp / maxHp) * 100;
             const fill = document.getElementById('zombie-hp-fill');
             fill.style.width = pct + '%';
             fill.style.background = pct > 50 ? 'linear-gradient(90deg, #44ff44, #88ff44)' : pct > 25 ? 'linear-gradient(90deg, #ffaa00, #ffcc44)' : 'linear-gradient(90deg, #ff2222, #ff6644)';
-            const name = hovered.tank ? '🦾 Tank' : hovered.big ? '💀 Big' : hovered.fast ? '⚡ Crawler' : '🧟 Zombie';
+            const name = hovered.tank ? '🦾 Tank' : hovered.big ? '💀 Big' : hovered.fast ? '⚡ Crawler' : hovered.stealth ? '👻 Stealth' : '🧟 Zombie';
             document.getElementById('zombie-hp-name').textContent = name + ' ' + Math.round(hovered.hp) + '/' + Math.round(maxHp);
             tooltip.style.display = 'block';
             tooltip.style.left = (e.clientX + 12) + 'px';
@@ -2740,6 +2874,9 @@
             const rem = steps % 2;
             const fastCount = 1 + pairs * 3 + rem * 2;
             for (let i = 0; i < fastCount; i++) spawnFastZombie();
+            // Stealth zombies for wave 9
+            const stealthCount = 1 + Math.floor(9 / 4);
+            for (let i = 0; i < stealthCount; i++) spawnStealthZombie();
             game.zombiesRemaining = 0; // all already spawned
             game.spawnInterval = 999;
             game.betweenWaves = false;
@@ -2767,6 +2904,12 @@
             const fastCount = 1 + pairs * 3 + rem * 2;
             for (let i = 0; i < fastCount; i++) spawnFastZombie();
             game.zombiesRemaining += fastCount;
+        }
+        // Stealth zombies from wave 6+ (1 + wave/4, skip boss waves)
+        if (game.wave >= 6 && game.wave % 5 !== 0) {
+            const stealthCount = 1 + Math.floor(game.wave / 4);
+            for (let i = 0; i < stealthCount; i++) spawnStealthZombie();
+            game.zombiesRemaining += stealthCount;
         }
         // Tank hole zombies: 5 + (waves since hole appeared) per wave
         if (tankHole && game.wave > tankHole.appearedAtWave) {
@@ -2809,6 +2952,25 @@
         zombieMeshes.push(mesh);
         const baseHp = Math.max(30 + game.wave * 5, game.wave >= 4 ? 80 : 0);
         zombies.push({ x, z, speed: 0.19, mesh, path: null, pathIndex: 0, pathTimer: 0, attacking: false, hp: baseHp, attackPhase: 'idle', attackTimer: 0, rising: true, riseTimer: 0, fast: true });
+    }
+
+    function spawnStealthZombie() {
+        const hole = spawnHoles[Math.floor(Math.random() * spawnHoles.length)];
+        const x = hole.x + (Math.random() - 0.5) * 1.5;
+        const z = hole.z + (Math.random() - 0.5) * 1.5;
+        const mesh = createZombieMesh();
+        // Make stealth zombie semi-transparent
+        mesh.traverse(child => {
+            if (child.isMesh) {
+                child.material = child.material.clone();
+                child.material.transparent = true;
+                child.material.opacity = 0.15;
+            }
+        });
+        mesh.position.set(x, -1.8, z);
+        zombieMeshes.push(mesh);
+        const baseHp = Math.max(40 + game.wave * 8, 100);
+        zombies.push({ x, z, speed: 0.07 + Math.random() * 0.02, mesh, path: null, pathIndex: 0, pathTimer: 0, attacking: false, hp: baseHp, attackPhase: 'idle', attackTimer: 0, rising: true, riseTimer: 0, stealth: true });
     }
 
     function spawnTankZombie() {
@@ -3321,8 +3483,9 @@
                     return Math.abs(diff) <= halfConeCheck;
                 }
                 zombies.forEach(z => {
+                    if (z.stealth && turret.type !== 'sniper') return;
                     const d = dist2D(turret.x, turret.z, z.x, z.z);
-                    if (d < turret.range && d < closestDist && inCone(z.x, z.z)) { closestDist = d; closestTarget = { x: z.x, z: z.z }; }
+                    if (d < turret.range && d < closestDist && (turret.type === 'sniper' || inCone(z.x, z.z))) { closestDist = d; closestTarget = { x: z.x, z: z.z }; }
                 });
                 if (!closestTarget && necromancer && necromancer.alive && dist2D(turret.x, turret.z, necromancer.x, necromancer.z) < turret.range && inCone(necromancer.x, necromancer.z)) {
                     closestTarget = { x: necromancer.x, z: necromancer.z };
@@ -3330,30 +3493,58 @@
                 if (closestTarget) {
                     turret.fireTimer = 0;
 
-                    // MG: rotate gun toward target within cone
-                    if (turret.type === 'machinegun') {
+                    // MG and Sniper: rotate gun toward target
+                    if (turret.type === 'machinegun' || turret.type === 'sniper') {
                         let aimAngle = Math.atan2(closestTarget.x - turret.x, closestTarget.z - turret.z);
                         turret.mesh.rotation.y = aimAngle;
                     }
 
                     const gun = turret.mesh.userData.gunGroup;
                     if (gun) {
-                        gun.position.z = turret.type === 'machinegun' ? -0.4 : -0.35;
-                        turret.recoilTimer = turret.type === 'machinegun' ? 8 : 10;
+                        gun.position.z = turret.type === 'machinegun' ? -0.4 : turret.type === 'sniper' ? -0.3 : -0.35;
+                        turret.recoilTimer = turret.type === 'machinegun' ? 8 : turret.type === 'sniper' ? 15 : 10;
                     }
-                    triggerShake(turret.type === 'machinegun' ? 0.12 : 0.15, turret.type === 'machinegun' ? 4 : 6);
-                    if (turret.type === 'machinegun') playMGSound(); else playShotgunSound();
+                    triggerShake(turret.type === 'sniper' ? 0.25 : turret.type === 'machinegun' ? 0.12 : 0.15, turret.type === 'sniper' ? 8 : turret.type === 'machinegun' ? 4 : 6);
+                    if (turret.type === 'sniper') playSniperSound(); else if (turret.type === 'machinegun') playMGSound(); else playShotgunSound();
                     const halfCone = Math.PI / 6;
-                    const currentFacing = turret.type === 'machinegun' ? turret.mesh.rotation.y : turret.facing;
-                    const flashAngle = currentFacing + (Math.random() - 0.5) * (turret.type === 'machinegun' ? 0.15 : halfCone * 2);
-                    const flash = new THREE.Mesh(flashGeom, turret.type === 'machinegun' ? mgFlashMat : flashMat);
+                    const currentFacing = (turret.type === 'machinegun' || turret.type === 'sniper') ? turret.mesh.rotation.y : turret.facing;
+                    const flashAngle = currentFacing + (Math.random() - 0.5) * (turret.type === 'machinegun' ? 0.15 : turret.type === 'sniper' ? 0.02 : halfCone * 2);
+                    const flash = new THREE.Mesh(flashGeom, turret.type === 'machinegun' ? mgFlashMat : turret.type === 'sniper' ? new THREE.MeshBasicMaterial({ color: 0x00ccff }) : flashMat);
                     const muzzleX = turret.x + Math.sin(flashAngle) * 0.9;
                     const muzzleZ = turret.z + Math.cos(flashAngle) * 0.9;
                     flash.position.set(muzzleX, 0.85, muzzleZ);
                     scene.add(flash);
                     setTimeout(() => scene.remove(flash), turret.type === 'machinegun' ? 40 : 80);
 
-                    if (turret.type === 'machinegun') {
+                    if (turret.type === 'sniper') {
+                        // Sniper: instant hitscan tracer + direct damage to target
+                        const aimAngle = Math.atan2(closestTarget.x - turret.x, closestTarget.z - turret.z);
+                        // Draw tracer line
+                        const tracerPoints = [
+                            new THREE.Vector3(muzzleX, 1.2, muzzleZ),
+                            new THREE.Vector3(closestTarget.x, 0.5, closestTarget.z)
+                        ];
+                        const tracerGeom = new THREE.BufferGeometry().setFromPoints(tracerPoints);
+                        const tracerLine = new THREE.Line(tracerGeom, new THREE.LineBasicMaterial({ color: 0x00ccff, transparent: true, opacity: 0.8 }));
+                        scene.add(tracerLine);
+                        setTimeout(() => scene.remove(tracerLine), 150);
+                        // Deal damage to nearest zombie at target position
+                        let bestZ = null, bestD = Infinity;
+                        for (const z of zombies) {
+                            const d = dist2D(closestTarget.x, closestTarget.z, z.x, z.z);
+                            if (d < 0.8 && d < bestD) { bestD = d; bestZ = z; }
+                        }
+                        if (bestZ) {
+                            bestZ.hp -= turret.damage;
+                            // Briefly reveal stealth zombie when hit
+                            if (bestZ.stealth) {
+                                bestZ.mesh.traverse(c => { if (c.isMesh) c.material.opacity = 0.7; });
+                                setTimeout(() => {
+                                    if (bestZ.mesh) bestZ.mesh.traverse(c => { if (c.isMesh) c.material.opacity = 0.15; });
+                                }, 500);
+                            }
+                        }
+                    } else if (turret.type === 'machinegun') {
                         const bullet = new THREE.Mesh(mgBulletGeom, mgBulletMat);
                         const randomAngle = currentFacing + (Math.random() - 0.5) * 0.15;
                         bullet.position.set(muzzleX, 0.85, muzzleZ);
@@ -3517,6 +3708,9 @@
         const btn2 = document.getElementById('buy-machinegun');
         if (coins >= 250) btn2.classList.remove('locked');
         else btn2.classList.add('locked');
+        const btn3 = document.getElementById('buy-sniper');
+        if (coins >= 500) btn3.classList.remove('locked');
+        else btn3.classList.add('locked');
     }
 
     // === GAME LOOP (60 FPS) ===
@@ -3632,6 +3826,9 @@
     });
     document.getElementById('buy-machinegun').addEventListener('click', () => {
         if (game.running) startPlacement('machinegun');
+    });
+    document.getElementById('buy-sniper').addEventListener('click', () => {
+        if (game.running) startPlacement('sniper');
     });
 
     animate();
