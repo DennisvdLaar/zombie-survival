@@ -3482,7 +3482,7 @@
                 zombies.forEach(z => {
                     if (z.stealth && turret.type !== 'sniper') return;
                     const d = dist2D(turret.x, turret.z, z.x, z.z);
-                    if (d < turret.range && d < closestDist && (turret.type === 'sniper' || inCone(z.x, z.z))) { closestDist = d; closestTarget = { x: z.x, z: z.z }; }
+                    if (d < turret.range && d < closestDist && inCone(z.x, z.z)) { closestDist = d; closestTarget = { x: z.x, z: z.z }; }
                 });
                 if (!closestTarget && necromancer && necromancer.alive && dist2D(turret.x, turret.z, necromancer.x, necromancer.z) < turret.range && inCone(necromancer.x, necromancer.z)) {
                     closestTarget = { x: necromancer.x, z: necromancer.z };
@@ -3490,8 +3490,8 @@
                 if (closestTarget) {
                     turret.fireTimer = 0;
 
-                    // MG and Sniper: rotate gun toward target
-                    if (turret.type === 'machinegun' || turret.type === 'sniper') {
+                    // MG: rotate gun toward target
+                    if (turret.type === 'machinegun') {
                         let aimAngle = Math.atan2(closestTarget.x - turret.x, closestTarget.z - turret.z);
                         turret.mesh.rotation.y = aimAngle;
                     }
@@ -3504,7 +3504,7 @@
                     triggerShake(turret.type === 'sniper' ? 0.25 : turret.type === 'machinegun' ? 0.12 : 0.15, turret.type === 'sniper' ? 8 : turret.type === 'machinegun' ? 4 : 6);
                     if (turret.type === 'sniper') playSniperSound(); else if (turret.type === 'machinegun') playMGSound(); else playShotgunSound();
                     const halfCone = Math.PI / 6;
-                    const currentFacing = (turret.type === 'machinegun' || turret.type === 'sniper') ? turret.mesh.rotation.y : turret.facing;
+                    const currentFacing = turret.type === 'machinegun' ? turret.mesh.rotation.y : turret.facing;
                     const flashAngle = currentFacing + (Math.random() - 0.5) * (turret.type === 'machinegun' ? 0.15 : turret.type === 'sniper' ? 0.02 : halfCone * 2);
                     const flash = new THREE.Mesh(flashGeom, turret.type === 'machinegun' ? mgFlashMat : turret.type === 'sniper' ? new THREE.MeshBasicMaterial({ color: 0x00ccff }) : flashMat);
                     const muzzleX = turret.x + Math.sin(flashAngle) * 0.9;
