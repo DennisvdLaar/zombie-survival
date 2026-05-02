@@ -187,6 +187,7 @@
             </div>
         </div>
     </div>
+    <div id="king-taunt" style="display:none; position:fixed; top:95px; left:50%; transform:translateX(-50%); z-index:11; padding:12px 26px; background:rgba(0,0,0,0.82); border:2px solid #d8a522; border-radius:12px; color:#ffd85a; font-family:'Impact',sans-serif; font-size:32px; letter-spacing:2px; text-shadow:0 0 14px #aa7700;"></div>
     <button id="begin-btn" style="display:none; position:fixed; top:15px; right:15px; z-index:10; padding:12px 28px; font-size:18px; font-weight:bold; font-family:'Impact',sans-serif; letter-spacing:2px; background:linear-gradient(180deg,#d44,#a22); color:#fff; border:2px solid #f66; border-radius:10px; cursor:pointer; text-shadow:0 0 6px #f00; box-shadow:0 0 15px rgba(255,50,50,0.5);">⚔️ LET'S BEGIN</button>
     <!-- Zombie hover healthbar -->
     <div id="zombie-hp-tooltip" style="display:none; position:fixed; pointer-events:none; z-index:20; text-align:center;">
@@ -807,6 +808,7 @@
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), matGrass);
     ground.rotation.x = -Math.PI/2;
     ground.receiveShadow = true;
+    ground.position.z = 0;
     scene.add(ground);
 
     // Concrete pathway to front door
@@ -1066,6 +1068,9 @@
     // === NO ROOF ===
 
     // === FURNITURE ===
+    const furnitureGroup = new THREE.Group();
+    scene.add(furnitureGroup);
+
     function makeBox(w, h, d, x, y, z, color) {
         const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.7 });
         const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
@@ -1076,117 +1081,105 @@
         return mesh;
     }
 
+    function makeFurnitureBox(w, h, d, x, y, z, color) {
+        const mesh = makeBox(w, h, d, x, y, z, color);
+        furnitureGroup.add(mesh);
+        return mesh;
+    }
+
     // Living Room (front-left: x=-13 to -4, z=0 to 10)
-    makeBox(4, 0.7, 1.3, -8.5, 0.35, 4, 0x5a4535);     // couch facing TV
-    makeBox(1.2, 0.65, 1.2, -6, 0.32, 4, 0x6a5545);    // armchair
-    makeBox(1.8, 0.4, 1, -8, 0.2, 6, 0x3a2815);        // coffee table
-    makeBox(1.2, 2.2, 0.5, -11.5, 1.1, 1, 0x4a3525);   // bookshelf (against back wall area)
-    makeBox(2.5, 0.1, 0.05, -8.5, 1.3, 9, 0x222222);   // TV on wall
-    makeBox(2.8, 0.5, 0.5, -8.5, 0.25, 9, 0x333333);   // TV stand
-    makeBox(0.6, 0.5, 0.6, -5, 0.25, 3, 0x5a4535);     // side table
+    makeFurnitureBox(4, 0.7, 1.3, -8.5, 0.35, 4, 0x5a4535);
+    makeFurnitureBox(1.2, 0.65, 1.2, -6, 0.32, 4, 0x6a5545);
+    makeFurnitureBox(1.8, 0.4, 1, -8, 0.2, 6, 0x3a2815);
+    makeFurnitureBox(1.2, 2.2, 0.5, -11.5, 1.1, 1, 0x4a3525);
+    makeFurnitureBox(2.5, 0.1, 0.05, -8.5, 1.3, 9, 0x222222);
+    makeFurnitureBox(2.8, 0.5, 0.5, -8.5, 0.25, 9, 0x333333);
+    makeFurnitureBox(0.6, 0.5, 0.6, -5, 0.25, 3, 0x5a4535);
 
     // Kitchen (back-right: x=5 to 13, z=-10 to 0)
-    // inner edges: left ~5.1, right ~12.8, back ~-9.8, front ~0
-    // L-shaped counter along back wall (split around stove) and right wall
-    makeBox(2.8, 0.08, 0.65, 6.65, 0.92, -9.5, 0xd0c8b8);  // countertop back-left of stove
-    makeBox(2.8, 0.85, 0.6, 6.65, 0.42, -9.5, 0x888888);   // counter cabinet back-left
-    makeBox(2.0, 0.08, 0.65, 10.5, 0.92, -9.5, 0xd0c8b8);  // countertop back-right of stove
-    makeBox(2.0, 0.85, 0.6, 10.5, 0.42, -9.5, 0x888888);   // counter cabinet back-right
-    makeBox(0.65, 0.08, 3.5, 12.5, 0.92, -7.8, 0xd0c8b8);  // countertop right wall
-    makeBox(0.6, 0.85, 3.5, 12.5, 0.42, -7.8, 0x888888);   // counter cabinet right
-    // Sink in counter (right wall section)
-    makeBox(0.4, 0.06, 0.5, 12.5, 0.9, -8.5, 0xa0aab0);    // sink basin
-    makeBox(0.08, 0.2, 0.08, 12.5, 1.05, -8.7, 0x999999);  // kitchen faucet
-    // Stove flush against back wall (moved right)
-    makeBox(0.9, 0.92, 0.6, 8.5, 0.46, -9.5, 0x333333);    // stove body
-    makeBox(0.15, 0.03, 0.15, 8.25, 0.93, -9.4, 0x222222); // burner 1
-    makeBox(0.15, 0.03, 0.15, 8.75, 0.93, -9.4, 0x222222); // burner 2
-    makeBox(0.15, 0.03, 0.15, 8.25, 0.93, -9.6, 0x222222); // burner 3
-    makeBox(0.15, 0.03, 0.15, 8.75, 0.93, -9.6, 0x222222); // burner 4
-    // Fridge flush in back-right corner
-    makeBox(0.85, 1.9, 0.7, 12.35, 0.95, -9.45, 0xdddddd); // fridge body
-    makeBox(0.82, 0.02, 0.02, 12.35, 1.2, -9.1, 0xbbbbbb); // fridge handle line
-    // Microwave on counter (back wall)
-    makeBox(0.5, 0.35, 0.35, 10.0, 1.1, -9.5, 0x333333);   // microwave
-    makeBox(0.45, 0.28, 0.02, 10.0, 1.08, -9.32, 0x556677); // microwave door
-    // Small kitchen table in the middle
-    makeBox(1.8, 0.05, 1.0, 8.5, 0.75, -4.0, 0x5a4a35);    // table top
-    makeBox(0.08, 0.75, 0.08, 7.7, 0.37, -3.55, 0x4a3a25); // table leg
-    makeBox(0.08, 0.75, 0.08, 9.3, 0.37, -3.55, 0x4a3a25); // table leg
-    makeBox(0.08, 0.75, 0.08, 7.7, 0.37, -4.45, 0x4a3a25); // table leg
-    makeBox(0.08, 0.75, 0.08, 9.3, 0.37, -4.45, 0x4a3a25); // table leg
-    // Chairs at table
-    makeBox(0.4, 0.05, 0.4, 7.8, 0.45, -4.0, 0x5a4a35);   // chair seat left
-    makeBox(0.4, 0.45, 0.05, 7.8, 0.7, -4.2, 0x5a4a35);   // chair back left
-    makeBox(0.4, 0.05, 0.4, 9.2, 0.45, -4.0, 0x5a4a35);   // chair seat right
-    makeBox(0.4, 0.45, 0.05, 9.2, 0.7, -3.8, 0x5a4a35);   // chair back right
-    // Trash can against left wall
-    makeBox(0.35, 0.5, 0.35, 5.3, 0.25, -5.0, 0x555555);   // trash can
+    makeFurnitureBox(2.8, 0.08, 0.65, 6.65, 0.92, -9.5, 0xd0c8b8);
+    makeFurnitureBox(2.8, 0.85, 0.6, 6.65, 0.42, -9.5, 0x888888);
+    makeFurnitureBox(2.0, 0.08, 0.65, 10.5, 0.92, -9.5, 0xd0c8b8);
+    makeFurnitureBox(2.0, 0.85, 0.6, 10.5, 0.42, -9.5, 0x888888);
+    makeFurnitureBox(0.65, 0.08, 3.5, 12.5, 0.92, -7.8, 0xd0c8b8);
+    makeFurnitureBox(0.6, 0.85, 3.5, 12.5, 0.42, -7.8, 0x888888);
+    makeFurnitureBox(0.4, 0.06, 0.5, 12.5, 0.9, -8.5, 0xa0aab0);
+    makeFurnitureBox(0.08, 0.2, 0.08, 12.5, 1.05, -8.7, 0x999999);
+    makeFurnitureBox(0.9, 0.92, 0.6, 8.5, 0.46, -9.5, 0x333333);
+    makeFurnitureBox(0.15, 0.03, 0.15, 8.25, 0.93, -9.4, 0x222222);
+    makeFurnitureBox(0.15, 0.03, 0.15, 8.75, 0.93, -9.4, 0x222222);
+    makeFurnitureBox(0.15, 0.03, 0.15, 8.25, 0.93, -9.6, 0x222222);
+    makeFurnitureBox(0.15, 0.03, 0.15, 8.75, 0.93, -9.6, 0x222222);
+    makeFurnitureBox(0.85, 1.9, 0.7, 12.35, 0.95, -9.45, 0xdddddd);
+    makeFurnitureBox(0.82, 0.02, 0.02, 12.35, 1.2, -9.1, 0xbbbbbb);
+    makeFurnitureBox(0.5, 0.35, 0.35, 10.0, 1.1, -9.5, 0x333333);
+    makeFurnitureBox(0.45, 0.28, 0.02, 10.0, 1.08, -9.32, 0x556677);
+    makeFurnitureBox(1.8, 0.05, 1.0, 8.5, 0.75, -4.0, 0x5a4a35);
+    makeFurnitureBox(0.08, 0.75, 0.08, 7.7, 0.37, -3.55, 0x4a3a25);
+    makeFurnitureBox(0.08, 0.75, 0.08, 9.3, 0.37, -3.55, 0x4a3a25);
+    makeFurnitureBox(0.08, 0.75, 0.08, 7.7, 0.37, -4.45, 0x4a3a25);
+    makeFurnitureBox(0.08, 0.75, 0.08, 9.3, 0.37, -4.45, 0x4a3a25);
+    makeFurnitureBox(0.4, 0.05, 0.4, 7.8, 0.45, -4.0, 0x5a4a35);
+    makeFurnitureBox(0.4, 0.45, 0.05, 7.8, 0.7, -4.2, 0x5a4a35);
+    makeFurnitureBox(0.4, 0.05, 0.4, 9.2, 0.45, -4.0, 0x5a4a35);
+    makeFurnitureBox(0.4, 0.45, 0.05, 9.2, 0.7, -3.8, 0x5a4a35);
+    makeFurnitureBox(0.35, 0.5, 0.35, 5.3, 0.25, -5.0, 0x555555);
 
     // Dining Room (back-center: x=-4 to 5, z=-10 to 0)
-    makeBox(3, 0.75, 1.8, 0.5, 0.37, -5, 0x5a3a20);    // dining table
-    makeBox(0.4, 0.7, 0.4, -0.5, 0.35, -4.5, 0x5a3a20);// chair
-    makeBox(0.4, 0.7, 0.4, 1.5, 0.35, -4.5, 0x5a3a20); // chair
-    makeBox(0.4, 0.7, 0.4, -0.5, 0.35, -5.5, 0x5a3a20);// chair
-    makeBox(0.4, 0.7, 0.4, 1.5, 0.35, -5.5, 0x5a3a20); // chair
-    makeBox(0.4, 0.7, 0.4, 0.5, 0.35, -4, 0x5a3a20);   // chair
-    makeBox(0.4, 0.7, 0.4, 0.5, 0.35, -6, 0x5a3a20);   // chair
-    makeBox(2, 1, 0.5, 0.5, 0.5, -9, 0x4a3525);        // sideboard against back wall
-    makeBox(1.2, 1.8, 0.4, -2.5, 0.9, -9, 0x4a3a30);   // china cabinet
+    makeFurnitureBox(3, 0.75, 1.8, 0.5, 0.37, -5, 0x5a3a20);
+    makeFurnitureBox(0.4, 0.7, 0.4, -0.5, 0.35, -4.5, 0x5a3a20);
+    makeFurnitureBox(0.4, 0.7, 0.4, 1.5, 0.35, -4.5, 0x5a3a20);
+    makeFurnitureBox(0.4, 0.7, 0.4, -0.5, 0.35, -5.5, 0x5a3a20);
+    makeFurnitureBox(0.4, 0.7, 0.4, 1.5, 0.35, -5.5, 0x5a3a20);
+    makeFurnitureBox(0.4, 0.7, 0.4, 0.5, 0.35, -4, 0x5a3a20);
+    makeFurnitureBox(0.4, 0.7, 0.4, 0.5, 0.35, -6, 0x5a3a20);
+    makeFurnitureBox(2, 1, 0.5, 0.5, 0.5, -9, 0x4a3525);
+    makeFurnitureBox(1.2, 1.8, 0.4, -2.5, 0.9, -9, 0x4a3a30);
 
     // Study/Office (back-left: x=-13 to -4, z=-10 to 0)
-    makeBox(2, 0.75, 1, -8.5, 0.37, -8, 0x4a3525);     // desk against back wall
-    makeBox(0.6, 0.9, 0.6, -8.5, 0.45, -6.5, 0x333333);// office chair
-    makeBox(1, 2.2, 0.4, -11.5, 1.1, -9, 0x4a3525);    // bookshelf
-    makeBox(1, 2.2, 0.4, -11.5, 1.1, -7, 0x4a3525);    // bookshelf 2
-    makeBox(0.5, 0.35, 0.3, -8.5, 0.95, -8, 0x222222); // monitor
-    makeBox(1.5, 0.7, 0.5, -6, 0.35, -9, 0x5a4535);    // filing cabinet
+    makeFurnitureBox(2, 0.75, 1, -8.5, 0.37, -8, 0x4a3525);
+    makeFurnitureBox(0.6, 0.9, 0.6, -8.5, 0.45, -6.5, 0x333333);
+    makeFurnitureBox(1, 2.2, 0.4, -11.5, 1.1, -9, 0x4a3525);
+    makeFurnitureBox(1, 2.2, 0.4, -11.5, 1.1, -7, 0x4a3525);
+    makeFurnitureBox(0.5, 0.35, 0.3, -8.5, 0.95, -8, 0x222222);
+    makeFurnitureBox(1.5, 0.7, 0.5, -6, 0.35, -9, 0x5a4535);
 
     // Bedroom (front-right: x=5 to 13, z=0 to 7)
-    makeBox(3, 0.6, 2.5, 11.5, 0.3, 3.5, 0x3a4a6a);      // bed against right wall (rotated 90°)
-    makeBox(2.8, 0.1, 2.3, 11.5, 0.62, 3.5, 0xeeeeff);  // bedsheet
-    makeBox(0.5, 0.25, 0.6, 12.5, 0.7, 3.2, 0xffffff);  // pillow (against wall)
-    makeBox(0.5, 0.25, 0.6, 12.5, 0.7, 3.8, 0xffffff);  // pillow (against wall)
-    makeBox(0.6, 0.6, 0.6, 12.5, 0.3, 2.0, 0x5a4a3a);       // nightstand under lamp
-    makeBox(2, 0.9, 0.5, 10, 0.45, 6.2, 0x4a3a2a);     // dresser
-    makeBox(1.2, 2.2, 0.8, 6.5, 1.1, 6.2, 0x5a4a3a);   // wardrobe
+    makeFurnitureBox(3, 0.6, 2.5, 11.5, 0.3, 3.5, 0x3a4a6a);
+    makeFurnitureBox(2.8, 0.1, 2.3, 11.5, 0.62, 3.5, 0xeeeeff);
+    makeFurnitureBox(0.5, 0.25, 0.6, 12.5, 0.7, 3.2, 0xffffff);
+    makeFurnitureBox(0.5, 0.25, 0.6, 12.5, 0.7, 3.8, 0xffffff);
+    makeFurnitureBox(0.6, 0.6, 0.6, 12.5, 0.3, 2.0, 0x5a4a3a);
+    makeFurnitureBox(2, 0.9, 0.5, 10, 0.45, 6.2, 0x4a3a2a);
+    makeFurnitureBox(1.2, 2.2, 0.8, 6.5, 1.1, 6.2, 0x5a4a3a);
 
     // Bathroom (front-right-top: x=5 to 13, z=7 to 10)
-    // inner edges: left ~5.1, right ~12.8, back ~9.8, front ~7.1
-    // Bathtub flush against back wall
-    makeBox(2.2, 0.15, 1.0, 7.5, 0.55, 9.3, 0xd8dde0);      // bathtub rim
-    makeBox(2.0, 0.5, 0.9, 7.5, 0.25, 9.35, 0xc0ccd0);      // bathtub body
-    makeBox(1.8, 0.05, 0.7, 7.5, 0.48, 9.35, 0x8ab4c8);     // water in tub
-    makeBox(0.08, 0.25, 0.08, 6.6, 0.6, 9.35, 0x888888);    // tub faucet pole
-    makeBox(0.12, 0.06, 0.15, 6.6, 0.75, 9.2, 0x999999);    // tub faucet head
-    // Bath mat in front of tub
-    makeBox(0.8, 0.02, 0.5, 7.5, 0.01, 8.5, 0x4488aa);      // bath mat
-    // Toilet flush against left wall (x=5.1)
-    makeBox(0.5, 0.45, 0.55, 5.4, 0.22, 8.2, 0xf0f0f0);    // toilet bowl
-    makeBox(0.12, 0.55, 0.45, 5.15, 0.45, 8.2, 0xf0f0f0);  // toilet tank flush to wall
-    makeBox(0.4, 0.04, 0.35, 5.45, 0.46, 8.15, 0xeeeeee);  // toilet seat
-    // Toilet paper holder flush on left wall
-    makeBox(0.04, 0.04, 0.2, 5.12, 0.5, 7.7, 0x888888);    // tp holder bar
-    makeBox(0.12, 0.12, 0.12, 5.12, 0.5, 7.6, 0xffffff);   // toilet paper roll
-    // Sink flush against right wall (x=12.8)
-    makeBox(0.45, 0.08, 0.7, 12.6, 0.9, 7.8, 0xd0d5d8);   // sink basin
-    makeBox(0.35, 0.5, 0.6, 12.65, 0.6, 7.8, 0x5a4a3a);   // sink cabinet
-    makeBox(0.08, 0.2, 0.08, 12.6, 1.0, 7.8, 0x888888);    // sink faucet
-    // Mirror flush on right wall above sink
-    makeBox(0.04, 0.7, 0.5, 12.8, 1.55, 7.8, 0xa0d0e0);   // mirror
-    makeBox(0.02, 0.74, 0.54, 12.82, 1.55, 7.8, 0x666666); // mirror frame
-    // Shower flush in back-right corner
-    makeBox(1.2, 0.08, 1.2, 12.2, 0.04, 9.2, 0xdddddd);   // shower tray
-    makeBox(0.05, 2.0, 1.2, 11.6, 1.0, 9.2, 0xaaddee);     // shower glass wall
-    makeBox(0.08, 0.25, 0.08, 12.7, 1.8, 9.7, 0x888888);   // shower head pole flush corner
-    makeBox(0.15, 0.06, 0.15, 12.7, 1.65, 9.7, 0x999999);  // shower head
-    // Towel rack flush on left wall
-    makeBox(0.04, 0.04, 0.8, 5.12, 1.3, 9.3, 0x888888);    // towel rack bar
-    makeBox(0.02, 0.6, 0.35, 5.12, 0.95, 9.1, 0xf5f5f0);  // towel
-    makeBox(0.02, 0.6, 0.35, 5.12, 0.95, 9.5, 0x88aacc);  // second towel
+    makeFurnitureBox(2.2, 0.15, 1.0, 7.5, 0.55, 9.3, 0xd8dde0);
+    makeFurnitureBox(2.0, 0.5, 0.9, 7.5, 0.25, 9.35, 0xc0ccd0);
+    makeFurnitureBox(1.8, 0.05, 0.7, 7.5, 0.48, 9.35, 0x8ab4c8);
+    makeFurnitureBox(0.08, 0.25, 0.08, 6.6, 0.6, 9.35, 0x888888);
+    makeFurnitureBox(0.12, 0.06, 0.15, 6.6, 0.75, 9.2, 0x999999);
+    makeFurnitureBox(0.8, 0.02, 0.5, 7.5, 0.01, 8.5, 0x4488aa);
+    makeFurnitureBox(0.5, 0.45, 0.55, 5.4, 0.22, 8.2, 0xf0f0f0);
+    makeFurnitureBox(0.12, 0.55, 0.45, 5.15, 0.45, 8.2, 0xf0f0f0);
+    makeFurnitureBox(0.4, 0.04, 0.35, 5.45, 0.46, 8.15, 0xeeeeee);
+    makeFurnitureBox(0.04, 0.04, 0.2, 5.12, 0.5, 7.7, 0x888888);
+    makeFurnitureBox(0.12, 0.12, 0.12, 5.12, 0.5, 7.6, 0xffffff);
+    makeFurnitureBox(0.45, 0.08, 0.7, 12.6, 0.9, 7.8, 0xd0d5d8);
+    makeFurnitureBox(0.35, 0.5, 0.6, 12.65, 0.6, 7.8, 0x5a4a3a);
+    makeFurnitureBox(0.08, 0.2, 0.08, 12.6, 1.0, 7.8, 0x888888);
+    makeFurnitureBox(0.04, 0.7, 0.5, 12.8, 1.55, 7.8, 0xa0d0e0);
+    makeFurnitureBox(0.02, 0.74, 0.54, 12.82, 1.55, 7.8, 0x666666);
+    makeFurnitureBox(1.2, 0.08, 1.2, 12.2, 0.04, 9.2, 0xdddddd);
+    makeFurnitureBox(0.05, 2.0, 1.2, 11.6, 1.0, 9.2, 0xaaddee);
+    makeFurnitureBox(0.08, 0.25, 0.08, 12.7, 1.8, 9.7, 0x888888);
+    makeFurnitureBox(0.15, 0.06, 0.15, 12.7, 1.65, 9.7, 0x999999);
+    makeFurnitureBox(0.04, 0.04, 0.8, 5.12, 1.3, 9.3, 0x888888);
+    makeFurnitureBox(0.02, 0.6, 0.35, 5.12, 0.95, 9.1, 0xf5f5f0);
+    makeFurnitureBox(0.02, 0.6, 0.35, 5.12, 0.95, 9.5, 0x88aacc);
 
     // Hallway (front-center: x=-4 to 5, z=0 to 10)
-    makeBox(2.5, 0.02, 3.5, 0.5, 0.01, 4, 0x6a4555);   // rug in hallway
+    makeFurnitureBox(2.5, 0.02, 3.5, 0.5, 0.01, 4, 0x6a4555);
 
     // === EXTERIOR DETAILS / APOCALYPSE DRESSING ===
     const matPorch = new THREE.MeshStandardMaterial({ color: 0x7a6a58, roughness: 0.85 });
@@ -1411,10 +1404,30 @@
     makeBox(7.2, 0.12, 0.6, 0, 0.06, HD/2 + 0.3, 0x706860);
 
     // === GAME STATE ===
-    let game = { running: false, wave: 1, zombiesRemaining: 0, spawnTimer: 0, spawnInterval: 70, betweenWaves: true, waveDelay: 0, tankTimer: 0 };
-    let gameMap = 'house'; // 'house' or 'hall'
+    function createFinalWaveState() {
+        return { active: false, phase: 0, spawnTimer: 0, spawned: 0, totalSpawned: 0, holes: [], king: null, spawnedPhase4: false, completed: false };
+    }
+
+    const waveDefinitions = {
+        1: { zombies: 5 },
+        2: { zombies: 8 },
+        3: { zombies: 10, crawlers: 1 },
+        4: { zombies: 15, crawlers: 3 },
+        5: { necromancer: true, zombies: 10 },
+        6: { zombies: 35, crawlers: 10 },
+        7: { crawlers: 20 },
+        8: { stealthZombies: 5 },
+        9: { zombies: 60 },
+        10: { commander: true },
+        11: { smallNecromancers: 1, crawlers: 20 },
+        12: { finalWave: true }
+    };
+
+    let game = { running: false, wave: 1, zombiesRemaining: 0, spawnTimer: 0, spawnInterval: 30, betweenWaves: true, waveDelay: 0, waitingForBegin: false, spawnQueue: [], finalWave: createFinalWaveState() };
+    let gameMap = 'house';
     let generator = { hp: 100, maxHp: 100 };
-    let necromancer = null; // boss object
+    let necromancer = null;
+    const kingTaunt = document.getElementById('king-taunt');
 
     // === NECROMANCER BOSS ===
     function createNecromancerMesh() {
@@ -2282,7 +2295,7 @@
         let hovered = null, hoverDist = 1.5;
         for (const z of zombies) {
             if (z.rising) continue;
-            const r = z.tank ? 2.5 : z.big ? 1.5 : 1.0;
+            const r = z.king || z.tank ? 2.5 : z.knight || z.big ? 1.5 : 1.0;
             const d = dist2D(mouseWorld.x, mouseWorld.z, z.x, z.z);
             if (d < r && d < hoverDist) {
                 hoverDist = d;
@@ -2290,12 +2303,21 @@
             }
         }
         if (hovered) {
-            const maxHp = hovered.tank ? 800 : hovered.big ? 290 : hovered.fast ? Math.max(30 + game.wave * 5, 80) : hovered.stealth ? Math.max(40 + game.wave * 8, 100) : Math.max(50 + game.wave * 10, 150);
+            const maxHp = hovered.maxHp || (hovered.tank ? 800 : hovered.big ? 290 : hovered.fast ? 60 : 100);
             const pct = Math.max(0, hovered.hp / maxHp) * 100;
             const fill = document.getElementById('zombie-hp-fill');
             fill.style.width = pct + '%';
             fill.style.background = pct > 50 ? 'linear-gradient(90deg, #44ff44, #88ff44)' : pct > 25 ? 'linear-gradient(90deg, #ffaa00, #ffcc44)' : 'linear-gradient(90deg, #ff2222, #ff6644)';
-            const name = hovered.tank ? '🦾 Tank' : hovered.big ? '💀 Big' : hovered.fast ? '⚡ Crawler' : hovered.stealth ? '👻 Stealth' : '🧟 Zombie';
+            let name = '🧟 Zombie';
+            if (hovered.king) name = '👑 King';
+            else if (hovered.commander) name = '🪖 Commander';
+            else if (hovered.knight) name = '🛡 Knight';
+            else if (hovered.skeleton) name = '⚔ Skeleton';
+            else if (hovered.smallNecro) name = '🔮 Small Necro';
+            else if (hovered.tank) name = '🦾 Tank';
+            else if (hovered.big) name = '💀 Big';
+            else if (hovered.fast) name = '⚡ Crawler';
+            else if (hovered.stealth) name = '👻 Stealth';
             document.getElementById('zombie-hp-name').textContent = name + ' ' + Math.round(hovered.hp) + '/' + Math.round(maxHp);
             tooltip.style.display = 'block';
             tooltip.style.left = (e.clientX + 12) + 'px';
@@ -2686,6 +2708,152 @@
         return group;
     }
 
+
+    function createCommanderZombieMesh() {
+        const group = createZombieMesh();
+        group.scale.set(1.25, 1.3, 1.25);
+        const helmetMat = new THREE.MeshStandardMaterial({ color: 0x55606a, roughness: 0.55, metalness: 0.35 });
+        const armorMat = new THREE.MeshStandardMaterial({ color: 0x47513d, roughness: 0.8 });
+        const helmet = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.08, 0.28), helmetMat);
+        helmet.position.set(0, 1.83, 0);
+        group.add(helmet);
+        const brim = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.02, 0.34), helmetMat);
+        brim.position.set(0, 1.8, 0.02);
+        group.add(brim);
+        const chest = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.3, 0.16), armorMat);
+        chest.position.set(0, 1.12, 0.11);
+        group.add(chest);
+        const pack = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.25, 0.12), new THREE.MeshStandardMaterial({ color: 0x3a3228, roughness: 0.9 }));
+        pack.position.set(0, 1.12, -0.14);
+        group.add(pack);
+        group.userData.walkSpeed = 2.2;
+        return group;
+    }
+
+    function createSkeletonMesh() {
+        const group = new THREE.Group();
+        const boneMat = new THREE.MeshStandardMaterial({ color: 0xe8ddc6, roughness: 0.6 });
+        const darkBoneMat = new THREE.MeshStandardMaterial({ color: 0xcab995, roughness: 0.7 });
+        const metalMat = new THREE.MeshStandardMaterial({ color: 0x777777, roughness: 0.45, metalness: 0.55 });
+        const gripMat = new THREE.MeshStandardMaterial({ color: 0x5a3a20, roughness: 0.85 });
+
+        const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.82, 0.09), boneMat);
+        leg1.position.set(0.11, 0.41, 0);
+        group.add(leg1);
+        const leg2 = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.82, 0.09), boneMat);
+        leg2.position.set(-0.11, 0.41, 0);
+        group.add(leg2);
+        const pelvis = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, 0.12), darkBoneMat);
+        pelvis.position.set(0, 0.86, 0);
+        group.add(pelvis);
+        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.5, 0.16), boneMat);
+        torso.position.set(0, 1.15, 0);
+        group.add(torso);
+        const spine = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.55, 0.08), darkBoneMat);
+        spine.position.set(0, 1.15, -0.02);
+        group.add(spine);
+        const neck = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.09, 0.07), boneMat);
+        neck.position.set(0, 1.48, 0);
+        group.add(neck);
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.24, 0.2), boneMat);
+        head.position.set(0, 1.66, 0);
+        group.add(head);
+        const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.14), darkBoneMat);
+        jaw.position.set(0, 1.52, 0.02);
+        group.add(jaw);
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x88ddff });
+        const eye1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.03, 0.02), eyeMat);
+        eye1.position.set(0.05, 1.69, 0.1);
+        group.add(eye1);
+        const eye2 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.03, 0.02), eyeMat);
+        eye2.position.set(-0.05, 1.69, 0.1);
+        group.add(eye2);
+        const arm1 = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.58, 0.09), boneMat);
+        arm1.position.set(0.27, 1.1, 0.08);
+        arm1.rotation.z = -0.12;
+        arm1.rotation.x = -0.55;
+        group.add(arm1);
+        const arm2 = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.58, 0.09), boneMat);
+        arm2.position.set(-0.27, 1.1, 0.08);
+        arm2.rotation.z = 0.12;
+        arm2.rotation.x = -0.55;
+        group.add(arm2);
+        const hand1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, 0.06), darkBoneMat);
+        hand1.position.set(0, -0.31, 0);
+        arm1.add(hand1);
+        const hand2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, 0.06), darkBoneMat);
+        hand2.position.set(0, -0.31, 0);
+        arm2.add(hand2);
+        const swordBlade = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.62, 0.02), metalMat);
+        swordBlade.position.set(0, -0.48, 0.02);
+        hand1.add(swordBlade);
+        const swordGuard = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.03, 0.03), metalMat);
+        swordGuard.position.set(0, -0.18, 0.02);
+        hand1.add(swordGuard);
+        const swordGrip = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.16, 0.04), gripMat);
+        swordGrip.position.set(0, -0.26, 0.02);
+        hand1.add(swordGrip);
+
+        group.userData.parts = { leg1, leg2, torso, head, jaw, arm1, arm2, hand1, hand2 };
+        group.userData.animPhase = Math.random() * Math.PI * 2;
+        group.userData.walkSpeed = 3.1;
+        scene.add(group);
+        return group;
+    }
+
+    function createKnightMesh() {
+        const group = createSkeletonMesh();
+        const steelMat = new THREE.MeshStandardMaterial({ color: 0x81868d, roughness: 0.45, metalness: 0.75 });
+        const darkSteel = new THREE.MeshStandardMaterial({ color: 0x4b5058, roughness: 0.5, metalness: 0.7 });
+        const torsoPlate = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.56, 0.2), steelMat);
+        torsoPlate.position.set(0, 1.16, 0.03);
+        group.add(torsoPlate);
+        const helmet = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.16, 0.24), darkSteel);
+        helmet.position.set(0, 1.75, 0);
+        group.add(helmet);
+        const visor = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.04, 0.03), steelMat);
+        visor.position.set(0, 1.71, 0.12);
+        group.add(visor);
+        const shoulderL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, 0.16), steelMat);
+        shoulderL.position.set(0.29, 1.42, 0.02);
+        group.add(shoulderL);
+        const shoulderR = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, 0.16), steelMat);
+        shoulderR.position.set(-0.29, 1.42, 0.02);
+        group.add(shoulderR);
+        const shield = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 0.36), darkSteel);
+        shield.position.set(0, -0.18, 0.16);
+        group.userData.parts.arm2.add(shield);
+        const knightSwordBlade = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.78, 0.03), steelMat);
+        knightSwordBlade.position.set(0, -0.56, 0.02);
+        group.userData.parts.hand1.add(knightSwordBlade);
+        group.scale.set(1.18, 1.18, 1.18);
+        group.userData.walkSpeed = 2.4;
+        return group;
+    }
+
+    function createKingZombieMesh() {
+        const group = createZombieMesh();
+        const crownMat = new THREE.MeshStandardMaterial({ color: 0xd8b020, roughness: 0.35, metalness: 0.85 });
+        const robeMat = new THREE.MeshStandardMaterial({ color: 0x5a1230, roughness: 0.9 });
+        const crownBase = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.05, 0.24), crownMat);
+        crownBase.position.set(0, 1.82, 0);
+        group.add(crownBase);
+        [-0.08, 0, 0.08].forEach(x => {
+            const spike = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.12, 0.04), crownMat);
+            spike.position.set(x, 1.9, 0.09 - Math.abs(x) * 0.2);
+            group.add(spike);
+        });
+        const cape = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.65, 0.08), robeMat);
+        cape.position.set(0, 1.12, -0.12);
+        group.add(cape);
+        const sash = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.62, 0.04), new THREE.MeshStandardMaterial({ color: 0xb8941f, roughness: 0.55 }));
+        sash.position.set(0.12, 1.07, 0.11);
+        sash.rotation.z = 0.25;
+        group.add(sash);
+        group.userData.walkSpeed = 1.8;
+        return group;
+    }
+
     // Zones: study(x<-4,z<0), dining(-4<x<5,z<0), kitchen(x>5,z<0),
     //        living(x<-4,z>0), hallway(-4<x<5,z>0), bedroom(5<x,z<7), bathroom(5<x,z>7)
     const navWaypoints = [
@@ -2730,22 +2898,43 @@
         return options[Math.floor(Math.random() * options.length)];
     }
 
+    function applyMapLayout() {
+        furnitureGroup.visible = gameMap !== 'hall';
+        interiorWallGroup.visible = gameMap !== 'hall';
+        wallSegments.length = 0;
+        if (gameMap !== 'hall') {
+            originalWallSegments.forEach(seg => wallSegments.push({ ...seg }));
+        }
+        ground.scale.set(1, 1, gameMap === 'hall' ? 1.65 : 1);
+        ground.position.z = gameMap === 'hall' ? 18 : 0;
+        const layout = gameMap === 'hall'
+            ? [{ x: -7, z: 26 }, { x: 7, z: 26 }, { x: -14, z: 22 }, { x: 14, z: 22 }]
+            : [{ x: -5, z: 16 }, { x: 5, z: 16 }, { x: -12, z: 13 }, { x: 12, z: 13 }];
+        layout.forEach((pos, idx) => {
+            if (spawnHoleMeshes[idx]) spawnHoleMeshes[idx].position.set(pos.x, 0, pos.z);
+            if (spawnHoles[idx]) {
+                spawnHoles[idx].x = pos.x;
+                spawnHoles[idx].z = pos.z;
+            }
+        });
+    }
+
     function resetGame() {
-        game = { running: true, wave: 1, zombiesRemaining: 0, spawnTimer: 0, spawnInterval: 70, betweenWaves: true, waveDelay: 60, swarmActive: false, waitingForBegin: false, tankTimer: 0 };
+        const previousFinalWave = game.finalWave;
+        game = { running: true, wave: 1, zombiesRemaining: 0, spawnTimer: 0, spawnInterval: 30, betweenWaves: true, waveDelay: 60, waitingForBegin: false, spawnQueue: [], finalWave: createFinalWaveState() };
         generator.hp = 100;
         frontDoor.alive = true;
         if (!frontDoor.mesh.parent) scene.add(frontDoor.mesh);
-        // Reset spawn holes
         spawnHoles.length = 0;
-        spawnHoleMeshes.forEach(m => m.visible = false);
-        // Reset necromancer
+        spawnHoleMeshes.forEach(mesh => {
+            mesh.visible = false;
+            mesh.scale.set(1, 1, 1);
+            mesh.userData.shrinking = false;
+        });
         if (necromancer && necromancer.mesh) scene.remove(necromancer.mesh);
         necromancer = null;
-        // Reset tank timer and hole
-        game.tankTimer = 0;
         if (tankHole && tankHole.mesh) scene.remove(tankHole.mesh);
         tankHole = null;
-        // Restore destructible walls
         destructibleWalls.forEach(w => {
             w.hp = w.maxHp;
             if (!w.alive) {
@@ -2753,272 +2942,201 @@
                 scene.add(w.mesh);
             }
         });
+        if (previousFinalWave && previousFinalWave.holes) {
+            previousFinalWave.holes.forEach(h => scene.remove(h.mesh));
+        }
+        kingTaunt.style.display = 'none';
         coins = 500;
-        // Remove old zombies
-        zombieMeshes.forEach(m => scene.remove(m));
+        zombieMeshes.forEach(mesh => scene.remove(mesh));
         zombieMeshes.length = 0;
         zombies = [];
-        // Remove old turrets
         turrets.forEach(t => scene.remove(t.mesh));
         turrets = [];
         activePellets.forEach(p => scene.remove(p.mesh));
         activePellets = [];
         genGlow.material.color.set(0x00aaff);
         genLight.color.set(0x00aaff);
+        applyMapLayout();
         updateHUD();
     }
 
-    // Spawn count pattern: each hole independently does 10, +3, +4, +3, +4
-    const spawnPattern = [3, 4, 3, 4];
-    function getHoleZombieCount(activeWaves) {
-        // activeWaves = how many waves this hole has been active (1-based)
-        let count = 10;
-        for (let i = 1; i < activeWaves; i++) {
-            count += spawnPattern[(i - 1) % spawnPattern.length];
-        }
-        return count;
-    }
-
-    // Spawn holes: all 4 positions, revealed progressively (1 at start, +1 every 5 waves)
-    const allSpawnHolePositions = [
-        { x: -5, z: 16 },
-        { x: 5, z: 16 },
-        { x: -12, z: 13 },
-        { x: 12, z: 13 }
-    ];
-    const spawnHoles = []; // active holes with { x, z, activeSinceWave }
+    const spawnHoles = [];
     const spawnHoleMeshes = [];
 
-    function createHoleMeshes(h) {
+    function createHoleGroup(x, z, size) {
+        const radius = size || 1.2;
         const group = new THREE.Group();
-        const hole = new THREE.Mesh(new THREE.CircleGeometry(1.2, 16),
+        group.position.set(x, 0, z);
+        const hole = new THREE.Mesh(new THREE.CircleGeometry(radius, 16),
             new THREE.MeshStandardMaterial({ color: 0x111108, roughness: 1 }));
         hole.rotation.x = -Math.PI / 2;
-        hole.position.set(h.x, 0.02, h.z);
+        hole.position.y = 0.02;
         group.add(hole);
-        const ring = new THREE.Mesh(new THREE.RingGeometry(1.2, 1.6, 16),
+        const ring = new THREE.Mesh(new THREE.RingGeometry(radius, radius + 0.4, 16),
             new THREE.MeshStandardMaterial({ color: 0x3a2a15, roughness: 1, side: THREE.DoubleSide }));
         ring.rotation.x = -Math.PI / 2;
-        ring.position.set(h.x, 0.03, h.z);
+        ring.position.y = 0.03;
         group.add(ring);
         for (let i = 0; i < 5; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const dist = 1.3 + Math.random() * 0.4;
-            const mound = new THREE.Mesh(new THREE.SphereGeometry(0.15 + Math.random() * 0.15, 6, 4),
+            const dist = radius + 0.1 + Math.random() * 0.35;
+            const mound = new THREE.Mesh(new THREE.SphereGeometry(0.15 + Math.random() * 0.12, 6, 4),
                 new THREE.MeshStandardMaterial({ color: 0x4a3a20, roughness: 1 }));
-            mound.position.set(h.x + Math.cos(angle) * dist, 0.08, h.z + Math.sin(angle) * dist);
+            mound.position.set(Math.cos(angle) * dist, 0.08, Math.sin(angle) * dist);
             mound.scale.y = 0.4;
             group.add(mound);
         }
         group.visible = false;
+        group.userData.shrinking = false;
         scene.add(group);
         return group;
     }
 
-    allSpawnHolePositions.forEach(h => {
-        spawnHoleMeshes.push(createHoleMeshes(h));
-    });
+    [
+        { x: -5, z: 16 },
+        { x: 5, z: 16 },
+        { x: -12, z: 13 },
+        { x: 12, z: 13 }
+    ].forEach(h => spawnHoleMeshes.push(createHoleGroup(h.x, h.z, 1.2)));
+
+    function updateHoleAnimation(mesh) {
+        if (!mesh || !mesh.userData.shrinking) return;
+        mesh.scale.multiplyScalar(0.92);
+        if (mesh.scale.x <= 0.05) {
+            mesh.visible = false;
+            mesh.userData.shrinking = false;
+        }
+    }
+
+    function showKingTaunt(text, duration) {
+        kingTaunt.textContent = text;
+        kingTaunt.style.display = 'block';
+        setTimeout(() => {
+            if (kingTaunt.textContent === text) kingTaunt.style.display = 'none';
+        }, duration || 3000);
+    }
 
     function updateActiveHoles() {
-        const maxHoles = Math.min(1 + Math.floor((game.wave - 1) / 5), allSpawnHolePositions.length);
+        const maxHoles = Math.min(1 + Math.floor((game.wave - 1) / 5), spawnHoleMeshes.length);
         while (spawnHoles.length < maxHoles) {
             const idx = spawnHoles.length;
-            const pos = allSpawnHolePositions[idx];
-            spawnHoles.push({ x: pos.x, z: pos.z, activeSinceWave: game.wave });
-            spawnHoleMeshes[idx].visible = true;
+            const mesh = spawnHoleMeshes[idx];
+            spawnHoles.push({ x: mesh.position.x, z: mesh.position.z, activeSinceWave: game.wave, mesh });
+            mesh.visible = true;
+            mesh.scale.set(1, 1, 1);
+            mesh.userData.shrinking = false;
         }
     }
 
-    // Spawn a zombie at the far edge of the field (army wave)
-    function spawnArmyZombie(hp) {
-        const x = -15 + Math.random() * 30; // spread across field width
-        const z = 30 + Math.random() * 3;   // far edge of grass
-        const speed = 0.06 + Math.random() * 0.03 + game.wave * 0.004;
-        const mesh = createZombieMesh();
-        mesh.position.set(x, 0, z);
-        zombieMeshes.push(mesh);
-        zombies.push({ x, z, speed, mesh, path: null, pathIndex: 0, pathTimer: 0, attacking: false, hp: hp, attackPhase: 'idle', attackTimer: 0, rising: false, riseTimer: 0 });
+    function shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
     }
 
-    function spawnArmyBigZombie(hp) {
-        const x = -5 + Math.random() * 10; // center of the army
-        const z = 32 + Math.random() * 2;
-        const speed = 0.05;
+    function createZombieData(x, z, mesh, options) {
+        const data = {
+            x, z,
+            speed: 0.06,
+            mesh,
+            path: null,
+            pathIndex: 0,
+            pathTimer: 0,
+            attacking: false,
+            hp: 100,
+            maxHp: 100,
+            attackPhase: 'idle',
+            attackTimer: 0,
+            rising: true,
+            riseTimer: 0,
+            riseY: -1.8,
+            riseDuration: null,
+            baseY: 0
+        };
+        Object.assign(data, options || {});
+        zombieMeshes.push(mesh);
+        zombies.push(data);
+        return data;
+    }
+
+    function getSpawnOrigin(options) {
+        const opts = options || {};
+        if (opts.x !== undefined && opts.z !== undefined) return { x: opts.x, z: opts.z };
+        const holes = opts.holes && opts.holes.length ? opts.holes : spawnHoles;
+        const hole = holes.length ? holes[Math.floor(Math.random() * holes.length)] : { x: 0, z: 16 };
+        const spread = opts.spread !== undefined ? opts.spread : 1.5;
+        return {
+            x: hole.x + (Math.random() - 0.5) * spread,
+            z: hole.z + (Math.random() - 0.5) * spread
+        };
+    }
+
+    function spawnZombie(options) {
+        const opts = options || {};
+        const origin = getSpawnOrigin(opts);
+        const mesh = createZombieMesh();
+        const hp = opts.hp !== undefined ? opts.hp : 100;
+        const baseY = opts.baseY !== undefined ? opts.baseY : 0;
+        const rising = opts.rising !== undefined ? opts.rising : true;
+        const riseY = opts.riseY !== undefined ? opts.riseY : -1.8;
+        mesh.position.set(origin.x, rising ? riseY : baseY, origin.z);
+        return createZombieData(origin.x, origin.z, mesh, Object.assign({
+            speed: opts.speed !== undefined ? opts.speed : 0.06 + Math.random() * 0.03,
+            hp,
+            maxHp: opts.maxHp !== undefined ? opts.maxHp : hp,
+            rising,
+            riseY,
+            baseY
+        }, opts));
+    }
+
+    function spawnBigZombie(options) {
+        const opts = options || {};
+        const origin = getSpawnOrigin(opts);
         const mesh = createZombieMesh();
         mesh.scale.set(1.8, 2.0, 1.8);
-        mesh.position.set(x, 0, z);
-        zombieMeshes.push(mesh);
-        zombies.push({ x, z, speed, mesh, path: null, pathIndex: 0, pathTimer: 0, attacking: false, hp: hp, attackPhase: 'idle', attackTimer: 0, rising: false, riseTimer: 0, big: true });
+        const hp = opts.hp !== undefined ? opts.hp : 290;
+        const baseY = opts.baseY !== undefined ? opts.baseY : 0;
+        const rising = opts.rising !== undefined ? opts.rising : true;
+        const riseY = opts.riseY !== undefined ? opts.riseY : -2.5;
+        mesh.position.set(origin.x, rising ? riseY : baseY, origin.z);
+        return createZombieData(origin.x, origin.z, mesh, Object.assign({
+            speed: opts.speed !== undefined ? opts.speed : 0.05,
+            hp,
+            maxHp: opts.maxHp !== undefined ? opts.maxHp : hp,
+            rising,
+            riseY,
+            baseY,
+            big: true
+        }, opts));
     }
 
-    function startWave(){
-        updateActiveHoles();
-
-        // === WAVE 4 SPECIAL: SWARM with 30s countdown ===
-        if (game.wave === 4) {
-            game.zombiesRemaining = 0;
-            game.spawnInterval = 999;
-            game.betweenWaves = false;
-            game.swarmActive = true;
-            // Give 1000 coins
-            coins += 750;
-            updateHUD();
-            // Show SWARM overlay with countdown
-            const overlay = document.getElementById('swarm-overlay');
-            const countdownEl = document.getElementById('swarm-countdown');
-            const swarmText = document.getElementById('swarm-text');
-            const swarmCoins = document.getElementById('swarm-coins');
-            overlay.style.display = 'flex';
-            swarmCoins.style.opacity = '1';
-            let timeLeft = 30;
-            countdownEl.textContent = timeLeft;
-            // Blink the SWARM text
-            let blinkOn = true;
-            const blinkInterval = setInterval(() => {
-                blinkOn = !blinkOn;
-                swarmText.style.opacity = blinkOn ? '1' : '0.2';
-            }, 300);
-            // Countdown timer
-            const countdownInterval = setInterval(() => {
-                timeLeft--;
-                countdownEl.textContent = timeLeft > 0 ? timeLeft : '';
-                if (timeLeft <= 5) countdownEl.style.color = '#ff4444';
-                if (timeLeft <= 0) {
-                    clearInterval(countdownInterval);
-                    clearInterval(blinkInterval);
-                    swarmText.style.opacity = '1';
-                    // Hide overlay after short delay
-                    setTimeout(() => { overlay.style.display = 'none'; }, 500);
-                    // Spawn the army
-                    for (let i = 0; i < 20; i++) spawnArmyZombie(150);
-                    spawnArmyBigZombie(500);
-                    game.swarmActive = false;
-                    // Reset countdown color
-                    countdownEl.style.color = '#ffcc00';
-                }
-            }, 1000);
-            return;
-        }
-
-        // (Necromancer waves disabled - replaced by Tank at wave 10)
-
-        // === WAVE 10 SPECIAL: TANK WAVE ===
-        if (game.wave === 10) {
-            game.betweenWaves = false;
-            game.tankTimer = 0;
-            // Spawn first Tank immediately + normal zombies from holes
-            spawnTankZombie();
-            let total = 0;
-            spawnHoles.forEach(h => {
-                const activeWaves = game.wave - h.activeSinceWave + 1;
-                total += getHoleZombieCount(activeWaves);
-            });
-            game.zombiesRemaining = total;
-            game.spawnInterval = Math.max(3, Math.floor((40 - game.wave * 3) / 3));
-            return;
-        }
-
-        // === WAVE 9 SPECIAL: ALL ZOMBIES AT ONCE ===
-        if (game.wave === 9) {
-            let total = 0;
-            spawnHoles.forEach(h => {
-                const activeWaves = game.wave - h.activeSinceWave + 1;
-                total += getHoleZombieCount(activeWaves);
-            });
-            // Spawn all normal zombies at once from holes
-            for (let i = 0; i < total; i++) spawnZombie();
-            // Spawn fast crawlers for wave 9 (steps=4 → 7 crawlers)
-            const steps = game.wave - 5;
-            const pairs = Math.floor(steps / 2);
-            const rem = steps % 2;
-            const fastCount = 1 + pairs * 3 + rem * 2;
-            for (let i = 0; i < fastCount; i++) spawnFastZombie();
-            // Stealth zombies for wave 9
-            const stealthCount = 1 + Math.floor(9 / 4);
-            for (let i = 0; i < stealthCount; i++) spawnStealthZombie();
-            game.zombiesRemaining = 0; // all already spawned
-            game.spawnInterval = 999;
-            game.betweenWaves = false;
-            return;
-        }
-
-        // Total zombies = sum of each hole's independent count
-        let total = 0;
-        spawnHoles.forEach(h => {
-            const activeWaves = game.wave - h.activeSinceWave + 1;
-            total += getHoleZombieCount(activeWaves);
-        });
-        game.zombiesRemaining = total;
-        game.spawnInterval = Math.max(3, Math.floor((40 - game.wave * 3) / 3));
-        game.betweenWaves = false;
-        // Spawn big zombies from wave 7 onwards (every 7 waves)
-        if (game.wave >= 7 && game.wave % 7 === 0) {
-            for (let i = 0; i < 2; i++) spawnBigZombie();
-        }
-        // Fast crawler zombies from wave 5+ (skip boss waves)
-        if (game.wave >= 5 && game.wave % 5 !== 0 && game.wave !== 4) {
-            const steps = game.wave - 5;
-            const pairs = Math.floor(steps / 2);
-            const rem = steps % 2;
-            const fastCount = 1 + pairs * 3 + rem * 2;
-            for (let i = 0; i < fastCount; i++) spawnFastZombie();
-            game.zombiesRemaining += fastCount;
-        }
-        // Stealth zombies from wave 6+ (1 + wave/4, skip boss waves)
-        if (game.wave >= 6 && game.wave % 5 !== 0) {
-            const stealthCount = 1 + Math.floor(game.wave / 4);
-            for (let i = 0; i < stealthCount; i++) spawnStealthZombie();
-            game.zombiesRemaining += stealthCount;
-        }
-        // Tank hole zombies: 5 + (waves since hole appeared) per wave
-        if (tankHole && game.wave > tankHole.appearedAtWave) {
-            const tankHoleCount = 5 + (game.wave - tankHole.appearedAtWave - 1);
-            for (let i = 0; i < tankHoleCount; i++) spawnFromTankHole();
-            game.zombiesRemaining += tankHoleCount;
-        }
-    }
-
-    function spawnZombie() {
-        const hole = spawnHoles[Math.floor(Math.random() * spawnHoles.length)];
-        const x = hole.x + (Math.random() - 0.5) * 1.5;
-        const z = hole.z + (Math.random() - 0.5) * 1.5;
-        const speed = 0.06 + Math.random() * 0.03;
-        const mesh = createZombieMesh();
-        mesh.position.set(x, -1.8, z); // start underground
-        zombieMeshes.push(mesh);
-        const baseHp = 100;
-        zombies.push({ x, z, speed, mesh, path: null, pathIndex: 0, pathTimer: 0, attacking: false, hp: baseHp, attackPhase: 'idle', attackTimer: 0, rising: true, riseTimer: 0 });
-    }
-
-    function spawnBigZombie() {
-        const hole = spawnHoles[Math.floor(Math.random() * spawnHoles.length)];
-        const x = hole.x + (Math.random() - 0.5) * 1.5;
-        const z = hole.z + (Math.random() - 0.5) * 1.5;
-        const speed = 0.05;
-        const mesh = createZombieMesh();
-        mesh.scale.set(1.8, 2.0, 1.8); // big boi
-        mesh.position.set(x, -2.5, z);
-        zombieMeshes.push(mesh);
-        zombies.push({ x, z, speed, mesh, path: null, pathIndex: 0, pathTimer: 0, attacking: false, hp: 290, attackPhase: 'idle', attackTimer: 0, rising: true, riseTimer: 0, big: true });
-    }
-
-    function spawnFastZombie() {
-        const hole = spawnHoles[Math.floor(Math.random() * spawnHoles.length)];
-        const x = hole.x + (Math.random() - 0.5) * 1.5;
-        const z = hole.z + (Math.random() - 0.5) * 1.5;
+    function spawnFastZombie(options) {
+        const opts = options || {};
+        const origin = getSpawnOrigin(opts);
         const mesh = createFastZombieMesh();
-        mesh.position.set(x, -1.2, z);
-        zombieMeshes.push(mesh);
-        const baseHp = 60;
-        zombies.push({ x, z, speed: 0.19, mesh, path: null, pathIndex: 0, pathTimer: 0, attacking: false, hp: baseHp, attackPhase: 'idle', attackTimer: 0, rising: true, riseTimer: 0, fast: true });
+        const hp = opts.hp !== undefined ? opts.hp : 60;
+        const baseY = opts.baseY !== undefined ? opts.baseY : 0;
+        const rising = opts.rising !== undefined ? opts.rising : true;
+        const riseY = opts.riseY !== undefined ? opts.riseY : -1.0;
+        mesh.position.set(origin.x, rising ? riseY : baseY, origin.z);
+        return createZombieData(origin.x, origin.z, mesh, Object.assign({
+            speed: opts.speed !== undefined ? opts.speed : 0.19,
+            hp,
+            maxHp: opts.maxHp !== undefined ? opts.maxHp : hp,
+            rising,
+            riseY,
+            baseY,
+            fast: true
+        }, opts));
     }
 
-    function spawnStealthZombie() {
-        const hole = spawnHoles[Math.floor(Math.random() * spawnHoles.length)];
-        const x = hole.x + (Math.random() - 0.5) * 1.5;
-        const z = hole.z + (Math.random() - 0.5) * 1.5;
+    function spawnStealthZombie(options) {
+        const opts = options || {};
+        const origin = getSpawnOrigin(opts);
         const mesh = createZombieMesh();
-        // Make stealth zombie semi-transparent
         mesh.traverse(child => {
             if (child.isMesh) {
                 child.material = child.material.clone();
@@ -3026,10 +3144,299 @@
                 child.material.opacity = 0.15;
             }
         });
-        mesh.position.set(x, -1.8, z);
-        zombieMeshes.push(mesh);
-        const baseHp = 100;
-        zombies.push({ x, z, speed: 0.07 + Math.random() * 0.02, mesh, path: null, pathIndex: 0, pathTimer: 0, attacking: false, hp: baseHp, attackPhase: 'idle', attackTimer: 0, rising: true, riseTimer: 0, stealth: true });
+        const hp = opts.hp !== undefined ? opts.hp : 100;
+        const baseY = opts.baseY !== undefined ? opts.baseY : 0;
+        const rising = opts.rising !== undefined ? opts.rising : true;
+        const riseY = opts.riseY !== undefined ? opts.riseY : -1.8;
+        mesh.position.set(origin.x, rising ? riseY : baseY, origin.z);
+        return createZombieData(origin.x, origin.z, mesh, Object.assign({
+            speed: opts.speed !== undefined ? opts.speed : 0.07 + Math.random() * 0.02,
+            hp,
+            maxHp: opts.maxHp !== undefined ? opts.maxHp : hp,
+            rising,
+            riseY,
+            baseY,
+            stealth: true
+        }, opts));
+    }
+
+    function spawnSmallNecromancer(options) {
+        const opts = options || {};
+        const origin = getSpawnOrigin(opts);
+        const mesh = createNecromancerMesh();
+        mesh.scale.set(0.6, 0.6, 0.6);
+        mesh.userData.animPhase = Math.random() * Math.PI * 2;
+        const hp = opts.hp !== undefined ? opts.hp : 200;
+        const baseY = opts.baseY !== undefined ? opts.baseY : 0.35;
+        const rising = opts.rising !== undefined ? opts.rising : true;
+        const riseY = opts.riseY !== undefined ? opts.riseY : -0.8;
+        mesh.position.set(origin.x, rising ? riseY : baseY, origin.z);
+        return createZombieData(origin.x, origin.z, mesh, Object.assign({
+            speed: opts.speed !== undefined ? opts.speed : 0.5,
+            hp,
+            maxHp: opts.maxHp !== undefined ? opts.maxHp : hp,
+            rising,
+            riseY,
+            baseY,
+            smallNecro: true,
+            smallNecroSummoned: false
+        }, opts));
+    }
+
+    function spawnSkeleton(options) {
+        const opts = options || {};
+        const origin = getSpawnOrigin(opts);
+        const mesh = createSkeletonMesh();
+        const hp = opts.hp !== undefined ? opts.hp : 150;
+        const baseY = opts.baseY !== undefined ? opts.baseY : 0;
+        const rising = opts.rising !== undefined ? opts.rising : true;
+        const riseY = opts.riseY !== undefined ? opts.riseY : -1.6;
+        mesh.position.set(origin.x, rising ? riseY : baseY, origin.z);
+        return createZombieData(origin.x, origin.z, mesh, Object.assign({
+            speed: opts.speed !== undefined ? opts.speed : 0.06,
+            hp,
+            maxHp: opts.maxHp !== undefined ? opts.maxHp : hp,
+            rising,
+            riseY,
+            baseY,
+            damage: opts.damage !== undefined ? opts.damage : 7,
+            skeleton: true
+        }, opts));
+    }
+
+    function spawnKnight(options) {
+        const opts = options || {};
+        const origin = getSpawnOrigin(opts);
+        const mesh = createKnightMesh();
+        const hp = opts.hp !== undefined ? opts.hp : 400;
+        const baseY = opts.baseY !== undefined ? opts.baseY : 0;
+        const rising = opts.rising !== undefined ? opts.rising : true;
+        const riseY = opts.riseY !== undefined ? opts.riseY : -2.0;
+        mesh.position.set(origin.x, rising ? riseY : baseY, origin.z);
+        return createZombieData(origin.x, origin.z, mesh, Object.assign({
+            speed: opts.speed !== undefined ? opts.speed : 0.5,
+            hp,
+            maxHp: opts.maxHp !== undefined ? opts.maxHp : hp,
+            rising,
+            riseY,
+            baseY,
+            big: true,
+            knight: true
+        }, opts));
+    }
+
+    function spawnKingZombie(options) {
+        const opts = options || {};
+        const origin = getSpawnOrigin(opts);
+        const mesh = createKingZombieMesh();
+        mesh.scale.set(1.8, 1.8, 1.8);
+        const hp = opts.hp !== undefined ? opts.hp : 2000;
+        const baseY = opts.baseY !== undefined ? opts.baseY : 0;
+        const rising = opts.rising !== undefined ? opts.rising : true;
+        const riseY = opts.riseY !== undefined ? opts.riseY : -2.8;
+        mesh.position.set(origin.x, rising ? riseY : baseY, origin.z);
+        return createZombieData(origin.x, origin.z, mesh, Object.assign({
+            speed: opts.speed !== undefined ? opts.speed : 0.4,
+            hp,
+            maxHp: opts.maxHp !== undefined ? opts.maxHp : hp,
+            rising,
+            riseY,
+            baseY,
+            big: true,
+            king: true,
+            attackGeneratorOnly: false
+        }, opts));
+    }
+
+    function spawnCommanderArmyRow(commander, rowIndex, count, tag) {
+        for (let i = 0; i < count; i++) {
+            const offsetX = (i - (count - 1) / 2) * 2.2;
+            const offsetZ = 2.5 + rowIndex * 1.6;
+            spawnZombie({
+                x: commander.x + offsetX,
+                z: commander.z + offsetZ,
+                rising: false,
+                commanderOwner: true,
+                commanderWave: tag,
+                speed: 0.06
+            });
+        }
+    }
+
+    function spawnCommanderZombie() {
+        const x = -10 + Math.random() * 20;
+        const z = 35;
+        const mesh = createCommanderZombieMesh();
+        mesh.position.set(x, 0, z);
+        createZombieData(x, z, mesh, {
+            speed: 0.06,
+            hp: 500,
+            maxHp: 500,
+            rising: false,
+            baseY: 0,
+            commander: true,
+            commanderPhase: 1,
+            attackGeneratorOnly: false
+        });
+    }
+
+    function spawnCommanderSecondWave(commander) {
+        spawnSmallNecromancer({ x: commander.x - 2.5, z: commander.z + 3.5, rising: false, commanderOwner: true, commanderWave: 2 });
+        spawnSmallNecromancer({ x: commander.x + 2.5, z: commander.z + 3.5, rising: false, commanderOwner: true, commanderWave: 2 });
+        for (let i = 0; i < 20; i++) {
+            spawnFastZombie({
+                x: commander.x - 5 + (i % 5) * 2.4,
+                z: commander.z + 5 + Math.floor(i / 5) * 1.4,
+                rising: false,
+                commanderOwner: true,
+                commanderWave: 2
+            });
+        }
+        for (let i = 0; i < 40; i++) {
+            spawnZombie({
+                x: commander.x - 6 + (i % 5) * 3.0,
+                z: commander.z + 10 + Math.floor(i / 5) * 1.4,
+                rising: false,
+                commanderOwner: true,
+                commanderWave: 2
+            });
+        }
+    }
+
+    function createFinalHole(x, z) {
+        const mesh = createHoleGroup(x, z, 1.25);
+        mesh.visible = true;
+        mesh.scale.set(1, 1, 1);
+        return { x, z, mesh };
+    }
+
+    function spawnFromFinalHoles(count, callback) {
+        for (let i = 0; i < count; i++) {
+            const hole = game.finalWave.holes[i % game.finalWave.holes.length];
+            callback(hole, i);
+        }
+    }
+
+    function countTaggedEnemies(tag) {
+        let total = 0;
+        zombies.forEach(z => { if (z.finalWaveTag === tag) total++; });
+        return total;
+    }
+
+    function startFinalWaveEvent() {
+        const finalWave = createFinalWaveState();
+        finalWave.active = true;
+        finalWave.phase = 1;
+        finalWave.totalSpawned = 0;
+        game.finalWave = finalWave;
+        spawnHoles.forEach(h => {
+            h.mesh.userData.shrinking = true;
+            h.mesh.visible = true;
+        });
+        const king = spawnKingZombie({ x: 0, z: 35, rising: false, attackGeneratorOnly: false });
+        king.stationary = true;
+        finalWave.king = king;
+        showKingTaunt('this is ur end', 3000);
+        for (let i = 0; i < 5; i++) {
+            finalWave.holes.push(createFinalHole(-10 + Math.random() * 20, 28 + Math.random() * 6));
+        }
+    }
+
+    function updateFinalWaveEvent() {
+        const fw = game.finalWave;
+        if (!fw || !fw.active) return;
+        fw.spawnTimer++;
+        if (fw.phase === 1) {
+            if (fw.spawned < 100 && fw.spawnTimer >= 120) {
+                fw.spawnTimer = 0;
+                const batch = Math.min(fw.holes.length, 100 - fw.spawned);
+                spawnFromFinalHoles(batch, hole => spawnZombie({ holes: [hole], finalWaveTag: 'sub1' }));
+                fw.spawned += batch;
+                fw.totalSpawned += batch;
+            } else if (fw.spawned >= 100 && countTaggedEnemies('sub1') === 0) {
+                fw.phase = 2;
+                fw.spawnTimer = 0;
+                fw.spawned = 0;
+            }
+        } else if (fw.phase === 2) {
+            if (fw.spawned < 20 && fw.spawnTimer >= 1200) {
+                fw.spawnTimer = 0;
+                const batch = Math.min(5, 20 - fw.spawned);
+                spawnFromFinalHoles(batch, hole => spawnBigZombie({ holes: [hole], hp: 400, maxHp: 400, finalWaveTag: 'sub2' }));
+                fw.spawned += batch;
+                fw.totalSpawned += batch;
+            } else if (fw.spawned >= 20 && countTaggedEnemies('sub2') === 0) {
+                fw.phase = 3;
+                fw.spawnTimer = 0;
+                fw.spawned = 0;
+            }
+        } else if (fw.phase === 3) {
+            if (fw.spawned < 120 && fw.spawnTimer >= 600) {
+                fw.spawnTimer = 0;
+                const batch = Math.min(fw.holes.length, 120 - fw.spawned);
+                spawnFromFinalHoles(batch, hole => spawnSkeleton({ holes: [hole], finalWaveTag: 'sub3' }));
+                fw.spawned += batch;
+                fw.totalSpawned += batch;
+            } else if (fw.spawned >= 120 && countTaggedEnemies('sub3') === 0) {
+                fw.phase = 4;
+                fw.spawnTimer = 0;
+                fw.spawned = 0;
+            }
+        } else if (fw.phase === 4) {
+            if (!fw.spawnedPhase4) {
+                fw.spawnedPhase4 = true;
+                if (fw.king) {
+                    fw.king.stationary = false;
+                    fw.king.attackGeneratorOnly = true;
+                }
+                for (let i = 0; i < 20; i++) {
+                    const hole = fw.holes[i % fw.holes.length];
+                    spawnKnight({ holes: [hole], finalWaveTag: 'sub4' });
+                }
+            }
+            if (!zombies.some(z => z.king || z.knight)) {
+                fw.active = false;
+                fw.completed = true;
+            }
+        }
+    }
+
+    function buildWaveQueue(def) {
+        const queue = [];
+        for (let i = 0; i < (def.zombies || 0); i++) queue.push('zombie');
+        for (let i = 0; i < (def.crawlers || 0); i++) queue.push('crawler');
+        for (let i = 0; i < (def.stealthZombies || 0); i++) queue.push('stealth');
+        for (let i = 0; i < (def.smallNecromancers || 0); i++) queue.push('smallNecro');
+        game.spawnQueue = shuffleArray(queue);
+        game.zombiesRemaining = game.spawnQueue.length;
+        game.spawnTimer = 0;
+        game.spawnInterval = def.commander ? 999 : 12;
+    }
+
+    function spawnFromQueue(kind) {
+        if (kind === 'crawler') spawnFastZombie();
+        else if (kind === 'stealth') spawnStealthZombie();
+        else if (kind === 'smallNecro') spawnSmallNecromancer();
+        else spawnZombie();
+    }
+
+    function startWave() {
+        updateActiveHoles();
+        game.betweenWaves = false;
+        game.spawnTimer = 0;
+        game.spawnQueue = [];
+        game.zombiesRemaining = 0;
+        const def = waveDefinitions[game.wave] || { zombies: 10 + game.wave * 2 };
+        if (def.necromancer) spawnNecromancerHorde();
+        if (def.commander) {
+            spawnCommanderZombie();
+            return;
+        }
+        if (def.finalWave) {
+            startFinalWaveEvent();
+            return;
+        }
+        buildWaveQueue(def);
     }
 
     function spawnTankZombie() {
@@ -3071,7 +3478,7 @@
         }
         zombies.push({
             x: holeX, z: holeZ, speed: 0.03, mesh, path: null, pathIndex: 0, pathTimer: 0,
-            attacking: false, hp: 800, attackPhase: 'idle', attackTimer: 0,
+            attacking: false, hp: 800, maxHp: 800, attackPhase: 'idle', attackTimer: 0,
             rising: true, riseTimer: 0, big: true, tank: true,
             targetWall: targetWall, wallSmashed: !targetWall || !targetWall.alive
         });
@@ -3088,7 +3495,7 @@
         zombieMeshes.push(mesh);
         const baseHp = 100;
         // These zombies enter through the side breach, mark them
-        zombies.push({ x, z, speed, mesh, path: null, pathIndex: 0, pathTimer: 0, attacking: false, hp: baseHp, attackPhase: 'idle', attackTimer: 0, rising: true, riseTimer: 0, useBreach: false, fromSide: true });
+        zombies.push({ x, z, speed, mesh, path: null, pathIndex: 0, pathTimer: 0, attacking: false, hp: baseHp, maxHp: baseHp, attackPhase: 'idle', attackTimer: 0, rising: true, riseTimer: 0, useBreach: false, fromSide: true });
     }
 
     function dist2D(x1, z1, x2, z2) { return Math.sqrt((x2-x1)**2 + (z2-z1)**2); }
@@ -3137,75 +3544,107 @@
     function update() {
         if (!game.running) return;
 
-        if (game.betweenWaves) { game.waveDelay--; if (game.waveDelay <= 0) startWave(); return; }
-
-        if (game.zombiesRemaining > 0) {
-            game.spawnTimer++;
-            if (game.spawnTimer >= game.spawnInterval) { spawnZombie(); game.zombiesRemaining--; game.spawnTimer = 0; }
+        if (game.betweenWaves) {
+            game.waveDelay--;
+            if (game.waveDelay <= 0) startWave();
+            return;
         }
 
-        // Tank spawn timer: every 60 seconds from wave 10+
-        if (game.wave >= 10) {
-            game.tankTimer = (game.tankTimer || 0) + 1;
-            if (game.tankTimer >= 3600) {
-                game.tankTimer = 0;
-                spawnTankZombie();
+        if (game.spawnQueue && game.spawnQueue.length > 0) {
+            game.spawnTimer++;
+            if (game.spawnTimer >= game.spawnInterval) {
+                spawnFromQueue(game.spawnQueue.shift());
+                game.zombiesRemaining = game.spawnQueue.length;
+                game.spawnTimer = 0;
             }
         }
 
-        const necAlive = necromancer && necromancer.alive;
-        if (game.zombiesRemaining <= 0 && zombies.length === 0 && !game.swarmActive && !necAlive && !game.waitingForBegin) {
-            game.wave++; game.betweenWaves = true; game.waveDelay = 120; updateHUD();
+        updateFinalWaveEvent();
+
+        const commander = zombies.find(z => z.commander);
+        if (commander) {
+            if (commander.commanderPhase === 1) {
+                for (let row = 0; row < 10; row++) spawnCommanderArmyRow(commander, row, 5, 1);
+                commander.commanderPhase = 2;
+            } else if (commander.commanderPhase === 2 && !zombies.some(z => z !== commander && z.commanderOwner && z.commanderWave === 1)) {
+                commander.commanderPhase = 3;
+            } else if (commander.commanderPhase === 3) {
+                spawnCommanderSecondWave(commander);
+                commander.commanderPhase = 4;
+                commander.attackGeneratorOnly = true;
+            }
         }
 
         const gcx = genGroup.position.x, gcz = genGroup.position.z;
 
         zombies.forEach(z => {
-            // Rise from ground animation
+            const baseY = z.baseY || 0;
+
+            if (z.smallNecro && !z.rising && !z.smallNecroSummoned) {
+                z.smallNecroSummoned = true;
+                for (let i = 0; i < 6; i++) {
+                    spawnFastZombie({
+                        x: z.x + Math.cos((Math.PI * 2 * i) / 6) * 1.4,
+                        z: z.z + Math.sin((Math.PI * 2 * i) / 6) * 1.4,
+                        hp: 20,
+                        maxHp: 20,
+                        commanderOwner: z.commanderOwner,
+                        commanderWave: z.commanderWave,
+                        finalWaveTag: z.finalWaveTag
+                    });
+                }
+            }
+
             if (z.rising) {
                 z.riseTimer++;
-                const riseDuration = Math.round((z.tank ? 45 : z.big ? 30 : z.fast ? 15 : 20) / 0.75);
-                const startY = z.tank ? -3.5 : z.big ? -2.5 : z.fast ? -1.0 : -1.8;
+                const riseDuration = z.riseDuration || Math.round((z.king ? 55 : z.tank ? 45 : z.big || z.knight ? 30 : z.fast ? 15 : 20) / 0.75);
+                const startY = z.riseY !== undefined ? z.riseY : (z.king ? -2.8 : z.tank ? -3.5 : z.big || z.knight ? -2.5 : z.fast ? -1.0 : -1.8);
                 const p = Math.min(z.riseTimer / riseDuration, 1);
-                z.mesh.position.y = startY + p * Math.abs(startY);
+                z.mesh.position.y = startY + p * (baseY - startY);
                 const parts = z.mesh.userData.parts;
-                if (parts && !z.fast) {
-                    parts.arm1.rotation.x = -2.5 + p * 1.4;
-                    parts.arm2.rotation.x = -2.5 + p * 1.4;
+                if (parts && !z.fast && !z.smallNecro) {
+                    if (parts.arm1) parts.arm1.rotation.x = -2.5 + p * 1.4;
+                    if (parts.arm2) parts.arm2.rotation.x = -2.5 + p * 1.4;
                 }
                 if (p >= 1) {
                     z.rising = false;
-                    z.mesh.position.y = 0;
+                    z.mesh.position.y = baseY;
                 }
                 return;
             }
 
             let inside;
             if (z.tank) {
-                // Tank is "inside" when it has smashed the wall and crossed the house boundary
-                inside = z.wallSmashed && Math.abs(z.x) < HW/2;
+                inside = z.wallSmashed && Math.abs(z.x) < HW / 2;
             } else if (z.fromSide) {
-                // Zombies from tank hole are "inside" once they cross the side wall
-                inside = Math.abs(z.x) < HW/2;
+                inside = Math.abs(z.x) < HW / 2;
             } else {
-                inside = z.z < HD/2;
+                inside = z.z < HD / 2;
             }
-            let tx, tz;
+
+            const directGenerator = !!(z.attackGeneratorOnly || (z.commander && z.commanderPhase >= 4) || (z.king && game.finalWave.active && game.finalWave.phase >= 4));
+            const stationary = !!((z.commander && z.commanderPhase < 4) || (z.king && game.finalWave.active && game.finalWave.phase < 4) || z.stationary);
+            let tx = z.x, tz = z.z;
             z.attacking = false;
 
             if (!inside) {
-                if (z.tank) {
-                    // Tank targets a side wall section
+                if (directGenerator) {
+                    tx = gcx;
+                    tz = gcz;
+                } else if (z.tank) {
                     if (z.targetWall && z.targetWall.alive) {
-                        tx = z.targetWall.x; tz = z.targetWall.z;
+                        tx = z.targetWall.x;
+                        tz = z.targetWall.z;
                         if (Math.abs(z.x - z.targetWall.x) < 2.8 && Math.abs(z.z - z.targetWall.z) < 3) {
                             z.attacking = true;
                             if (z.attackPhase === 'idle') {
-                                z.attackPhase = 'windup'; z.attackTimer = 0;
+                                z.attackPhase = 'windup';
+                                z.attackTimer = 0;
                             }
                             z.attackTimer++;
                             if (z.attackPhase === 'windup' && z.attackTimer > 20) {
-                                z.attackPhase = 'strike'; z.attackTimer = 0;
+                                z.attackPhase = 'strike';
+                                z.attackTimer = 0;
                             } else if (z.attackPhase === 'strike' && z.attackTimer > 8) {
                                 z.targetWall.hp -= 25;
                                 if (z.targetWall.hp <= 0) {
@@ -3215,93 +3654,106 @@
                                     z.attacking = false;
                                     z.attackPhase = 'idle';
                                 }
-                                z.attackPhase = 'recover'; z.attackTimer = 0;
+                                z.attackPhase = 'recover';
+                                z.attackTimer = 0;
                             } else if (z.attackPhase === 'recover' && z.attackTimer > 15) {
-                                z.attackPhase = 'windup'; z.attackTimer = 0;
+                                z.attackPhase = 'windup';
+                                z.attackTimer = 0;
                             }
                         }
                     } else {
-                        // Wall destroyed, walk into house through the breach
-                        const gcDir = z.x < 0 ? 1 : -1;
-                        tx = z.x + gcDir * 2; tz = z.z;
+                        tx = z.x + (z.x < 0 ? 2 : -2);
+                        tz = z.z;
                         z.wallSmashed = true;
                     }
-                    // Tank is NOT blocked by the front door
                 } else {
-                    // Normal zombie: only side-spawned zombies use breach
                     let useBreach = false;
                     let breachX = 0, breachZ = 0;
                     if (z.fromSide) {
                         for (const w of destructibleWalls) {
-                            if (!w.alive) { useBreach = true; breachX = w.x; breachZ = w.z; break; }
+                            if (!w.alive) {
+                                useBreach = true;
+                                breachX = w.x;
+                                breachZ = w.z;
+                                break;
+                            }
                         }
                     }
-
                     if (useBreach) {
-                        // Walk toward the side breach (go to the side of the house)
-                        tx = breachX + (breachX < 0 ? -1 : 1); tz = breachZ;
-                        // Once close to the breach, walk through
+                        tx = breachX + (breachX < 0 ? -1 : 1);
+                        tz = breachZ;
                         if (Math.abs(z.x - breachX) < 2 && Math.abs(z.z - breachZ) < 3) {
-                            tx = breachX + (breachX < 0 ? 2 : -2); tz = breachZ;
-                            z.fromSide = true; // will be detected as inside once past wall
+                            tx = breachX + (breachX < 0 ? 2 : -2);
+                            tz = breachZ;
+                            z.fromSide = true;
                         }
                     } else {
-                        // Walk toward the door
-                        tx = 0; tz = HD/2 - 0.5;
-                        // If door is alive and zombie reached the door, attack it
-                        if (frontDoor.alive && dist2D(z.x, z.z, 0, HD/2) < 1.5) {
+                        tx = 0;
+                        tz = HD / 2 - 0.5;
+                        if (frontDoor.alive && !directGenerator && dist2D(z.x, z.z, 0, HD / 2) < 1.5) {
                             z.attacking = true;
                             if (z.attackPhase === 'idle') {
-                                z.attackPhase = 'windup'; z.attackTimer = 0;
+                                z.attackPhase = 'windup';
+                                z.attackTimer = 0;
                             }
                             z.attackTimer++;
                             if (z.attackPhase === 'windup' && z.attackTimer > 15) {
-                                z.attackPhase = 'strike'; z.attackTimer = 0;
+                                z.attackPhase = 'strike';
+                                z.attackTimer = 0;
                             } else if (z.attackPhase === 'strike' && z.attackTimer > 5) {
-                                z.attackPhase = 'recover'; z.attackTimer = 0;
+                                z.attackPhase = 'recover';
+                                z.attackTimer = 0;
                             } else if (z.attackPhase === 'recover' && z.attackTimer > 12) {
-                                z.attackPhase = 'windup'; z.attackTimer = 0;
+                                z.attackPhase = 'windup';
+                                z.attackTimer = 0;
                             }
                         }
-                        // If door is alive, block entry (can't pass through wall)
-                        if (frontDoor.alive && z.z < HD/2 + 0.3) {
-                            z.z = HD/2 + 0.3;
+                        if (frontDoor.alive && !directGenerator && z.z < HD / 2 + 0.3) {
+                            z.z = HD / 2 + 0.3;
                         }
                     }
                 }
             } else {
-                // Find nearest target: turret or generator
                 let targetX = gcx, targetZ = gcz, targetType = 'generator';
                 let targetDist = dist2D(z.x, z.z, gcx, gcz);
                 let targetTurret = null;
-                for (const t of turrets) {
-                    const td = dist2D(z.x, z.z, t.x, t.z);
-                    if (td < targetDist) {
-                        targetDist = td;
-                        targetX = t.x; targetZ = t.z;
-                        targetType = 'turret';
-                        targetTurret = t;
+
+                if (!directGenerator) {
+                    for (const t of turrets) {
+                        const td = dist2D(z.x, z.z, t.x, t.z);
+                        if (td < targetDist) {
+                            targetDist = td;
+                            targetX = t.x;
+                            targetZ = t.z;
+                            targetType = 'turret';
+                            targetTurret = t;
+                        }
                     }
                 }
 
-                if (!z.path || z.pathTimer <= 0) {
-                    z.path = getPath(z.x, z.z, targetX, targetZ);
-                    z.pathIndex = 0;
-                    z.pathTimer = 60;
-                }
-                z.pathTimer--;
-
-                if (z.path.length > 0 && z.pathIndex < z.path.length) {
-                    const wp = navWaypoints[z.path[z.pathIndex]];
-                    tx = wp.x; tz = wp.z;
-                    if (dist2D(z.x, z.z, wp.x, wp.z) < 0.6) z.pathIndex++;
+                if (!directGenerator && gameMap !== 'hall') {
+                    if (!z.path || z.pathTimer <= 0) {
+                        z.path = getPath(z.x, z.z, targetX, targetZ);
+                        z.pathIndex = 0;
+                        z.pathTimer = 60;
+                    }
+                    z.pathTimer--;
+                    if (z.path.length > 0 && z.pathIndex < z.path.length) {
+                        const wp = navWaypoints[z.path[z.pathIndex]];
+                        tx = wp.x;
+                        tz = wp.z;
+                        if (dist2D(z.x, z.z, wp.x, wp.z) < 0.6) z.pathIndex++;
+                    } else {
+                        tx = targetX;
+                        tz = targetZ;
+                    }
                 } else {
-                    tx = targetX; tz = targetZ;
+                    tx = targetX;
+                    tz = targetZ;
                 }
 
                 if (targetDist < 1.2) {
                     z.attacking = true;
-                    // Attack swing cycle
                     if (z.attackPhase === 'idle') {
                         z.attackPhase = 'windup';
                         z.attackTimer = 0;
@@ -3311,18 +3763,18 @@
                         z.attackPhase = 'strike';
                         z.attackTimer = 0;
                     } else if (z.attackPhase === 'strike' && z.attackTimer > 5) {
-                        // Deal damage to turret or generator
+                        const damage = z.damage || 10;
                         if (targetType === 'turret' && targetTurret) {
-                            targetTurret.hp -= 5;
+                            targetTurret.hp -= damage;
                             if (targetTurret.hp <= 0) {
                                 scene.remove(targetTurret.mesh);
                                 turrets.splice(turrets.indexOf(targetTurret), 1);
                                 z.attacking = false;
                                 z.attackPhase = 'idle';
-                                z.path = null; // recalculate path
+                                z.path = null;
                             }
                         } else {
-                            generator.hp -= 5;
+                            generator.hp -= damage;
                             if (generator.hp <= 0) gameOver();
                         }
                         z.attackPhase = 'recover';
@@ -3334,30 +3786,34 @@
                 }
             }
 
-            if (!z.attacking) {
+            if (!z.attacking && !stationary) {
                 const angle = Math.atan2(tx - z.x, tz - z.z);
                 const mx = Math.sin(angle) * z.speed;
                 const mz = Math.cos(angle) * z.speed;
-
                 let newX = z.x + mx, newZ = z.z + mz;
-
-                if (inside) {
+                if (inside && !directGenerator && gameMap !== 'hall') {
                     const col = collideWalls(newX, newZ, 0.4);
-                    newX = col.x; newZ = col.z;
+                    newX = col.x;
+                    newZ = col.z;
                 }
-
-                z.x = newX; z.z = newZ;
+                z.x = newX;
+                z.z = newZ;
                 z.mesh.rotation.y = angle;
+            } else if (stationary) {
+                z.mesh.rotation.y = Math.atan2(gcx - z.x, gcz - z.z);
             }
 
-            z.mesh.position.set(z.x, 0, z.z);
+            z.mesh.position.set(z.x, baseY, z.z);
 
-            // Procedural animation
             const parts = z.mesh.userData.parts;
+            if (z.smallNecro && parts) {
+                z.mesh.position.y = baseY + Math.sin(Date.now() * 0.004 + z.mesh.userData.animPhase) * 0.08;
+                if (parts.orb) parts.orb.scale.setScalar(1 + Math.sin(Date.now() * 0.008) * 0.15);
+                return;
+            }
             if (parts) {
                 const t = Date.now() * 0.001 * z.mesh.userData.walkSpeed + z.mesh.userData.animPhase;
                 if (z.mesh.userData.isTank) {
-                    // Tank heavy stomp animation
                     if (z.attacking) {
                         let armAngle = -1.0;
                         let bodyLean = 0;
@@ -3379,14 +3835,12 @@
                         if (parts.arm3) parts.arm3.rotation.x = armAngle * 0.5 + 0.5;
                         parts.torso.rotation.x = bodyLean;
                         parts.jaw.rotation.x = z.attackPhase === 'strike' ? 0.7 : 0.15;
-                        // Ground shake effect on strike
-                        z.mesh.position.y = z.attackPhase === 'strike' ? -0.05 : 0;
+                        z.mesh.position.y = baseY + (z.attackPhase === 'strike' ? -0.05 : 0);
                     } else {
-                        // Heavy stomping walk
                         const stride = Math.sin(t * 0.8);
                         parts.leg1.rotation.x = stride * 0.35;
                         parts.leg2.rotation.x = -stride * 0.35;
-                        z.mesh.position.y = Math.abs(Math.sin(t * 1.6)) * 0.04;
+                        z.mesh.position.y = baseY + Math.abs(Math.sin(t * 1.6)) * 0.04;
                         parts.torso.rotation.z = Math.sin(t * 0.8) * 0.04;
                         parts.torso.rotation.x = 0.1;
                         parts.head.rotation.z = Math.sin(t * 0.5) * 0.06;
@@ -3396,24 +3850,17 @@
                         parts.jaw.rotation.x = 0.2 + Math.abs(Math.sin(t * 0.4)) * 0.1;
                     }
                 } else if (z.mesh.userData.isCrawler) {
-                    // Crawler gallop animation (on all fours)
                     if (!z.attacking) {
                         const gallop = Math.sin(t * 1.2);
                         const gallop2 = Math.sin(t * 1.2 + Math.PI);
-                        // Front legs alternate
                         parts.arm1.rotation.x = gallop * 0.6;
                         parts.arm2.rotation.x = gallop2 * 0.6;
-                        // Back legs alternate (opposite to front)
                         parts.leg1.rotation.x = gallop2 * 0.5;
                         parts.leg2.rotation.x = gallop * 0.5;
-                        // Body bounces up and down
-                        z.mesh.position.y = Math.abs(Math.sin(t * 2.4)) * 0.08;
-                        // Head bobs
+                        z.mesh.position.y = baseY + Math.abs(Math.sin(t * 2.4)) * 0.08;
                         parts.head.rotation.x = Math.sin(t * 2.4) * 0.15;
-                        // Jaw snaps
                         parts.jaw.rotation.x = 0.2 + Math.abs(Math.sin(t * 1.5)) * 0.25;
                     } else {
-                        // Crawler attack: lunge and bite
                         let headLunge = 0;
                         if (z.attackPhase === 'windup') {
                             headLunge = -Math.min(z.attackTimer / 15, 1) * 0.3;
@@ -3424,79 +3871,63 @@
                             parts.jaw.rotation.x = 0.2;
                         }
                         parts.head.rotation.x = headLunge;
-                        z.mesh.position.y = 0;
+                        z.mesh.position.y = baseY;
                     }
                 } else if (z.attacking) {
-                    // Overhead slam animation
-                    let armAngle = -1.2; // neutral arm angle (hanging)
+                    let armAngle = -1.2;
                     let bodyLean = 0;
                     if (z.attackPhase === 'windup') {
-                        // Arm raises up above head
                         const p = Math.min(z.attackTimer / 15, 1);
-                        armAngle = -1.2 - p * 1.8; // arm goes up and back over head
-                        bodyLean = -p * 0.3; // lean back
+                        armAngle = -1.2 - p * 1.8;
+                        bodyLean = -p * 0.3;
                     } else if (z.attackPhase === 'strike') {
-                        // Arm slams down fast
                         const p = Math.min(z.attackTimer / 5, 1);
-                        armAngle = -3.0 + p * 3.5; // from above head to far down
-                        bodyLean = -0.3 + p * 0.6; // lean forward on slam
+                        armAngle = -3.0 + p * 3.5;
+                        bodyLean = -0.3 + p * 0.6;
                     } else if (z.attackPhase === 'recover') {
-                        // Arm returns to neutral
                         const p = Math.min(z.attackTimer / 12, 1);
-                        armAngle = 0.5 - p * 1.7; // back to -1.2
+                        armAngle = 0.5 - p * 1.7;
                         bodyLean = 0.3 - p * 0.3;
                     }
-                    parts.arm1.rotation.x = armAngle;
-                    parts.arm2.rotation.x = armAngle * 0.4; // other arm follows slightly
-                    parts.torso.rotation.x = bodyLean;
-                    parts.jaw.rotation.x = z.attackPhase === 'strike' ? 0.6 : 0.2;
-                    parts.head.rotation.z = 0;
-                    parts.leg1.rotation.x = 0;
-                    parts.leg2.rotation.x = 0;
-                    z.mesh.position.y = 0;
+                    if (parts.arm1) parts.arm1.rotation.x = armAngle;
+                    if (parts.arm2) parts.arm2.rotation.x = armAngle * 0.4;
+                    if (parts.torso) parts.torso.rotation.x = bodyLean;
+                    if (parts.jaw) parts.jaw.rotation.x = z.attackPhase === 'strike' ? 0.6 : 0.2;
+                    if (parts.head) parts.head.rotation.z = 0;
+                    if (parts.leg1) parts.leg1.rotation.x = 0;
+                    if (parts.leg2) parts.leg2.rotation.x = 0;
+                    z.mesh.position.y = baseY;
                 } else {
-                    // Limping walk: one leg drags, uneven stride
                     const stride = Math.sin(t);
-                    const limpBias = 0.6; // one leg swings less (injured)
-                    parts.leg1.rotation.x = stride * 0.5;
-                    parts.leg2.rotation.x = -stride * 0.5 * limpBias; // dragging leg
-
-                    // Uneven body bob (limp dips on weak side)
+                    const limpBias = 0.6;
+                    if (parts.leg1) parts.leg1.rotation.x = stride * 0.5;
+                    if (parts.leg2) parts.leg2.rotation.x = -stride * 0.5 * limpBias;
                     const limpDip = Math.max(0, Math.sin(t)) * 0.06;
-                    z.mesh.position.y = limpDip;
-
-                    // Body tilts toward weak leg
-                    parts.torso.rotation.z = Math.sin(t) * 0.08;
-                    parts.torso.rotation.x = 0.15 + Math.abs(stride) * 0.05;
-
-                    // Head sways and tilts loosely
-                    parts.head.rotation.z = Math.sin(t * 0.7) * 0.12;
-                    parts.head.rotation.x = Math.sin(t * 0.5) * 0.08;
-
-                    // Arms swing unevenly (one limp, one reaching)
-                    parts.arm1.rotation.x = -1.1 + Math.sin(t + 0.5) * 0.25;
-                    parts.arm2.rotation.x = -1.1 + Math.sin(t + 2.5) * 0.15;
-                    parts.arm1.rotation.z = -0.4 + Math.sin(t * 0.8) * 0.1;
-                    parts.arm2.rotation.z = 0.4 - Math.sin(t * 0.8) * 0.1;
-
-                    // Hands now follow arms automatically (children of arm meshes)
-
-                    // Jaw loosely hanging open
-                    parts.jaw.rotation.x = 0.3 + Math.abs(Math.sin(t * 0.3)) * 0.15;
+                    z.mesh.position.y = baseY + limpDip;
+                    if (parts.torso) {
+                        parts.torso.rotation.z = Math.sin(t) * 0.08;
+                        parts.torso.rotation.x = 0.15 + Math.abs(stride) * 0.05;
+                    }
+                    if (parts.head) {
+                        parts.head.rotation.z = Math.sin(t * 0.7) * 0.12;
+                        parts.head.rotation.x = Math.sin(t * 0.5) * 0.08;
+                    }
+                    if (parts.arm1) parts.arm1.rotation.x = -0.8 + Math.sin(t) * 0.35;
+                    if (parts.arm2) parts.arm2.rotation.x = -0.8 - Math.sin(t) * 0.25;
+                    if (parts.jaw) parts.jaw.rotation.x = 0.3 + Math.abs(Math.sin(t * 0.3)) * 0.15;
                 }
             }
         });
 
-        // Zombie-to-zombie separation (prevent overlapping)
-        const sepRadius = 0.5;
-        const bigSepRadius = 1.2;
         for (let i = 0; i < zombies.length; i++) {
             const a = zombies[i];
             if (a.rising) continue;
             for (let j = i + 1; j < zombies.length; j++) {
                 const b = zombies[j];
                 if (b.rising) continue;
-                const minDist = (a.big ? bigSepRadius : sepRadius) + (b.big ? bigSepRadius : sepRadius);
+                const ra = a.big || a.king || a.knight || a.tank ? 1.2 : 0.5;
+                const rb = b.big || b.king || b.knight || b.tank ? 1.2 : 0.5;
+                const minDist = ra + rb;
                 const dx = b.x - a.x;
                 const dz = b.z - a.z;
                 const dist = Math.sqrt(dx * dx + dz * dz);
@@ -3512,12 +3943,12 @@
             }
         }
 
-        // Update necromancer boss
+        spawnHoleMeshes.forEach(updateHoleAnimation);
+        if (game.finalWave && game.finalWave.holes) game.finalWave.holes.forEach(h => updateHoleAnimation(h.mesh));
+
         updateNecromancer();
 
-        // Turret AI
         turrets.forEach(turret => {
-            // Recoil recovery animation
             if (turret.recoilTimer > 0) {
                 turret.recoilTimer--;
                 const gun = turret.mesh.userData.gunGroup;
@@ -3526,16 +3957,14 @@
                     if (gun.position.z > -0.2) gun.position.z = -0.2;
                 }
             }
-            // Handle burst cooldown
             if (turret.burstCooldown > 0) {
                 turret.burstCooldown--;
                 if (turret.burstCooldown === 0 && turret.burstFired > 0) {
-                    turret.fireTimer = turret.fireRate; // trigger another shot immediately
+                    turret.fireTimer = turret.fireRate;
                 }
             }
             turret.fireTimer++;
             if (turret.fireTimer >= turret.fireRate) {
-                // Find nearest target in range AND within cone
                 let closestDist = Infinity;
                 let closestTarget = null;
                 const halfConeCheck = Math.PI / 6;
@@ -3546,7 +3975,6 @@
                     while (diff < -Math.PI) diff += Math.PI * 2;
                     return Math.abs(diff) <= halfConeCheck;
                 }
-                // Sniper prioritizes hidden zombies
                 let closestHiddenDist = Infinity;
                 let closestHidden = null;
                 zombies.forEach(z => {
@@ -3554,9 +3982,13 @@
                     const d = dist2D(turret.x, turret.z, z.x, z.z);
                     if (d < turret.range && inCone(z.x, z.z)) {
                         if (turret.type === 'sniper' && z.stealth && d < closestHiddenDist) {
-                            closestHiddenDist = d; closestHidden = { x: z.x, z: z.z };
+                            closestHiddenDist = d;
+                            closestHidden = { x: z.x, z: z.z };
                         }
-                        if (d < closestDist) { closestDist = d; closestTarget = { x: z.x, z: z.z }; }
+                        if (d < closestDist) {
+                            closestDist = d;
+                            closestTarget = { x: z.x, z: z.z };
+                        }
                     }
                 });
                 if (closestHidden) closestTarget = closestHidden;
@@ -3565,14 +3997,11 @@
                 }
                 if (closestTarget) {
                     turret.fireTimer = 0;
-
-                    // MG and Sniper: rotate gun toward target
                     if (turret.type === 'machinegun' || turret.type === 'sniper') {
-                        let aimAngle = Math.atan2(closestTarget.x - turret.x, closestTarget.z - turret.z);
+                        const aimAngle = Math.atan2(closestTarget.x - turret.x, closestTarget.z - turret.z);
                         turret.mesh.rotation.y = aimAngle;
                         turret.facing = aimAngle;
                     }
-
                     const gun = turret.mesh.userData.gunGroup;
                     if (gun) {
                         gun.position.z = turret.type === 'machinegun' ? -0.4 : turret.type === 'sniper' ? -0.3 : -0.35;
@@ -3591,9 +4020,6 @@
                     setTimeout(() => scene.remove(flash), turret.type === 'machinegun' ? 40 : 80);
 
                     if (turret.type === 'sniper') {
-                        // Sniper: instant hitscan tracer + direct damage to target
-                        const aimAngle = Math.atan2(closestTarget.x - turret.x, closestTarget.z - turret.z);
-                        // Draw tracer line
                         const tracerPoints = [
                             new THREE.Vector3(muzzleX, 1.2, muzzleZ),
                             new THREE.Vector3(closestTarget.x, 0.5, closestTarget.z)
@@ -3602,7 +4028,6 @@
                         const tracerLine = new THREE.Line(tracerGeom, new THREE.LineBasicMaterial({ color: 0x00ccff, transparent: true, opacity: 0.8 }));
                         scene.add(tracerLine);
                         setTimeout(() => scene.remove(tracerLine), 150);
-                        // Deal damage to nearest zombie at target position
                         let bestZ = null, bestD = Infinity;
                         for (const z of zombies) {
                             const d = dist2D(closestTarget.x, closestTarget.z, z.x, z.z);
@@ -3610,7 +4035,6 @@
                         }
                         if (bestZ) {
                             bestZ.hp -= turret.damage;
-                            // Briefly reveal stealth zombie when hit
                             if (bestZ.stealth) {
                                 bestZ.mesh.traverse(c => { if (c.isMesh) c.material.opacity = 0.7; });
                                 setTimeout(() => {
@@ -3637,12 +4061,10 @@
                             maxRange: turret.range
                         });
                     } else {
-                        // Shotgun pellets
-                        const halfConeSpread = Math.PI / 6;
                         const numPellets = turret.pellets || 6;
                         for (let p = 0; p < numPellets; p++) {
                             const pellet = new THREE.Mesh(pelletGeom, pelletMat);
-                            const randomAngle = turret.facing + (Math.random() - 0.5) * 2 * halfConeSpread;
+                            const randomAngle = turret.facing + (Math.random() - 0.5) * 2 * halfCone;
                             const verticalSpread = (Math.random() - 0.5) * 0.25;
                             pellet.position.set(muzzleX, 0.85, muzzleZ);
                             pellet.rotation.y = randomAngle;
@@ -3660,10 +4082,9 @@
                                 maxRange: turret.range
                             });
                         }
-                        // Handle burst fire (triple magazine)
                         if (turret.burstCount > 1 && turret.burstFired < turret.burstCount - 1) {
                             turret.burstFired++;
-                            turret.burstCooldown = 8; // small delay between bursts
+                            turret.burstCooldown = 8;
                         } else {
                             turret.burstFired = 0;
                         }
@@ -3672,48 +4093,48 @@
             }
         });
 
-        // Update pellets with collision detection
         for (let i = activePellets.length - 1; i >= 0; i--) {
             const p = activePellets[i];
             p.mesh.position.x += p.vx;
             p.mesh.position.z += p.vz;
             if (p.vy !== undefined) p.mesh.position.y += p.vy;
             p.life--;
-            // Check if pellet exceeded cone range
             if (p.maxRange) {
                 const dx = p.mesh.position.x - p.startX;
                 const dz = p.mesh.position.z - p.startZ;
                 if (dx * dx + dz * dz > p.maxRange * p.maxRange) {
-                    p.hasHit = true; p.life = 0;
+                    p.hasHit = true;
+                    p.life = 0;
                 }
             }
-            // Check collision with walls
             if (!p.hasHit) {
                 const px = p.mesh.position.x, pz = p.mesh.position.z;
                 for (const seg of wallSegments) {
-                    if (seg.x1 === seg.x2) { // vertical wall
-                        if (pz > Math.min(seg.z1, seg.z2) && pz < Math.max(seg.z1, seg.z2)) {
-                            if (Math.abs(px - seg.x1) < 0.15) { p.hasHit = true; p.life = 0; break; }
+                    if (seg.x1 === seg.x2) {
+                        if (pz > Math.min(seg.z1, seg.z2) && pz < Math.max(seg.z1, seg.z2) && Math.abs(px - seg.x1) < 0.15) {
+                            p.hasHit = true;
+                            p.life = 0;
+                            break;
                         }
-                    } else { // horizontal wall
-                        if (px > Math.min(seg.x1, seg.x2) && px < Math.max(seg.x1, seg.x2)) {
-                            if (Math.abs(pz - seg.z1) < 0.15) { p.hasHit = true; p.life = 0; break; }
-                        }
+                    } else if (px > Math.min(seg.x1, seg.x2) && px < Math.max(seg.x1, seg.x2) && Math.abs(pz - seg.z1) < 0.15) {
+                        p.hasHit = true;
+                        p.life = 0;
+                        break;
                     }
                 }
-                // Check exterior walls
-                const HW = 26, HD = 20;
-                if (px < -HW/2 || px > HW/2 || pz < -HD/2 || pz > HD/2) { p.hasHit = true; p.life = 0; }
+                if (px < -HW / 2 || px > HW / 2 || pz < -HD / 2 || pz > HD / 2) {
+                    p.hasHit = true;
+                    p.life = 0;
+                }
             }
-            // Check collision with zombies (hitbox radius ~0.4)
             if (!p.hasHit) {
                 for (const z of zombies) {
                     const dx = p.mesh.position.x - z.x;
                     const dz = p.mesh.position.z - z.z;
-                    if (dx * dx + dz * dz < 0.16) { // 0.4 radius squared
+                    if (dx * dx + dz * dz < 0.16) {
                         z.hp -= p.damage;
                         p.hasHit = true;
-                        p.life = 0; // remove pellet on hit
+                        p.life = 0;
                         break;
                     }
                 }
@@ -3724,17 +4145,24 @@
             }
         }
 
-        // Remove dead zombies and award coins
         for (let i = zombies.length - 1; i >= 0; i--) {
             if (zombies[i].hp <= 0) {
                 scene.remove(zombies[i].mesh);
                 zombieMeshes.splice(zombieMeshes.indexOf(zombies[i].mesh), 1);
+                coins += zombies[i].coinReward || 10;
                 zombies.splice(i, 1);
-                coins += 10;
             }
         }
 
-        // Generator glow color based on HP
+        const necAlive = necromancer && necromancer.alive;
+        if (!game.waitingForBegin && !game.finalWave.active && (!game.spawnQueue || game.spawnQueue.length === 0) && zombies.length === 0 && !necAlive) {
+            if (game.wave < 12) {
+                game.wave++;
+                game.betweenWaves = true;
+                game.waveDelay = 120;
+            }
+        }
+
         const hpRatio = generator.hp / generator.maxHp;
         if (hpRatio > 0.5) { genGlow.material.color.set(0x00aaff); genLight.color.set(0x00aaff); }
         else if (hpRatio > 0.25) { genGlow.material.color.set(0xffaa00); genLight.color.set(0xffaa00); }
@@ -3757,33 +4185,50 @@
         document.getElementById('coins').textContent = coins;
         const el = document.getElementById('gen-hp');
         el.style.color = generator.hp > 50 ? '#4af' : generator.hp > 25 ? '#fa0' : '#f44';
-        // Boss HP display (Tank or Necromancer)
         const bossDiv = document.getElementById('boss-hp');
         const bossLabel = document.getElementById('boss-hp-label');
         const bossBar = document.getElementById('boss-hp-bar');
-        // Find the first alive tank zombie
-        const tankZ = zombies.find(z => z.tank);
-        if (tankZ) {
+        const bossFill = document.getElementById('boss-hp-fill');
+        const bossZ = zombies.find(z => z.king) || zombies.find(z => z.commander) || zombies.find(z => z.tank);
+        if (bossZ) {
             bossDiv.style.display = 'block';
-            bossLabel.style.color = '#ff4422';
-            bossLabel.style.textShadow = '0 0 8px #cc2200';
-            bossBar.style.borderColor = '#cc4422';
-            document.getElementById('boss-hp-fill').style.background = 'linear-gradient(90deg, #cc2200, #ff6644)';
-            document.getElementById('boss-hp-text').textContent = Math.max(0, Math.round(tankZ.hp)) + '/800';
-            document.getElementById('boss-hp-fill').style.width = Math.max(0, (tankZ.hp / 800) * 100) + '%';
-            bossLabel.innerHTML = '🦾 TANK — <span id="boss-hp-text">' + Math.max(0, Math.round(tankZ.hp)) + '/800</span> HP';
+            let label = 'BOSS';
+            let color = '#ff4422';
+            let shadow = '0 0 8px #cc2200';
+            let border = '#cc4422';
+            let gradient = 'linear-gradient(90deg, #cc2200, #ff6644)';
+            if (bossZ.king) {
+                label = '👑 KING';
+                color = '#ffd85a';
+                shadow = '0 0 8px #a87400';
+                border = '#d8a522';
+                gradient = 'linear-gradient(90deg, #c18d15, #ffd85a)';
+            } else if (bossZ.commander) {
+                label = '🪖 COMMANDER';
+                color = '#88dd88';
+                shadow = '0 0 8px #225522';
+                border = '#3a8a4a';
+                gradient = 'linear-gradient(90deg, #2d6630, #88dd88)';
+            } else if (bossZ.tank) {
+                label = '🦾 TANK';
+            }
+            bossLabel.style.color = color;
+            bossLabel.style.textShadow = shadow;
+            bossBar.style.borderColor = border;
+            bossFill.style.background = gradient;
+            bossFill.style.width = Math.max(0, (bossZ.hp / bossZ.maxHp) * 100) + '%';
+            bossLabel.innerHTML = label + ' — <span id="boss-hp-text">' + Math.max(0, Math.round(bossZ.hp)) + '/' + Math.round(bossZ.maxHp) + '</span> HP';
         } else if (necromancer && necromancer.alive) {
             bossDiv.style.display = 'block';
             bossLabel.style.color = '#cc66ff';
             bossLabel.style.textShadow = '0 0 8px #8800cc';
             bossBar.style.borderColor = '#8844cc';
-            document.getElementById('boss-hp-fill').style.background = 'linear-gradient(90deg, #aa22ff, #cc66ff)';
-            document.getElementById('boss-hp-text').textContent = Math.max(0, Math.round(necromancer.hp)) + '/' + necromancer.maxHp;
-            document.getElementById('boss-hp-fill').style.width = Math.max(0, (necromancer.hp / necromancer.maxHp) * 100) + '%';
+            bossFill.style.background = 'linear-gradient(90deg, #aa22ff, #cc66ff)';
+            bossFill.style.width = Math.max(0, (necromancer.hp / necromancer.maxHp) * 100) + '%';
+            bossLabel.innerHTML = '💀 NECROMANCER — <span id="boss-hp-text">' + Math.max(0, Math.round(necromancer.hp)) + '/' + necromancer.maxHp + '</span> HP';
         } else {
             bossDiv.style.display = 'none';
         }
-        // Update shop item availability
         const btn = document.getElementById('buy-turret');
         if (coins >= 150) btn.classList.remove('locked');
         else btn.classList.add('locked');
@@ -3866,10 +4311,7 @@
     });
     document.getElementById('map-hall').addEventListener('click', () => {
         gameMap = 'hall';
-        interiorWallGroup.visible = false;
-        wallSegments.length = 0;
         document.getElementById('map-select').style.display = 'none';
-        // Hall: generator in center, skip room select
         moveGenerator('hallway');
         document.getElementById('shop-bar').style.display = 'flex';
         document.getElementById('begin-btn').style.display = 'block';
@@ -3879,11 +4321,9 @@
     });
     document.getElementById('map-house').addEventListener('click', () => {
         gameMap = 'house';
-        interiorWallGroup.visible = true;
-        wallSegments.length = 0;
-        originalWallSegments.forEach(s => wallSegments.push({...s}));
         document.getElementById('map-select').style.display = 'none';
         document.getElementById('room-select').style.display = 'flex';
+        applyMapLayout();
     });
     document.getElementById('mode-attack').addEventListener('click', () => {
         // Attack mode - coming soon, for now just show alert
