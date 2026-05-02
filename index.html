@@ -3168,13 +3168,10 @@
                     }
                     // Tank is NOT blocked by the front door
                 } else {
-                    // Normal zombie: check for breached side walls
+                    // Normal zombie: only side-spawned zombies use breach
                     let useBreach = false;
                     let breachX = 0, breachZ = 0;
-                    if (z.useBreach === undefined) {
-                        z.useBreach = Math.random() < 0.35;
-                    }
-                    if (z.useBreach) {
+                    if (z.fromSide) {
                         for (const w of destructibleWalls) {
                             if (!w.alive) { useBreach = true; breachX = w.x; breachZ = w.z; break; }
                         }
