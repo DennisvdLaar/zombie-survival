@@ -70,6 +70,53 @@
             font-weight: bold; font-size: 12px; border: 1px solid #555;
             min-width: 24px; text-align: center;
         }
+        #turret-upgrade-panel {
+            position: absolute; right: 115px; top: 50%; transform: translateY(-50%);
+            display: none; width: 240px; padding: 16px 16px 14px;
+            background: linear-gradient(180deg, rgba(10,18,10,0.96), rgba(0,0,0,0.92));
+            border: 2px solid #2f8f4d; border-radius: 14px; color: #e8f7e8; z-index: 6;
+            box-shadow: 0 0 24px rgba(40,160,80,0.3); font-family: 'Impact', sans-serif;
+            letter-spacing: 1px;
+        }
+        #turret-upgrade-panel .panel-close {
+            position: absolute; top: 8px; right: 8px; width: 28px; height: 28px;
+            margin: 0; padding: 0; border-radius: 50%; border: 1px solid #5bbb74;
+            background: rgba(18,42,22,0.9); color: #dfffe3; font-size: 18px; line-height: 1;
+        }
+        #turret-upgrade-panel .panel-close:hover { background: rgba(36,80,44,0.95); }
+        #turret-upgrade-panel .panel-title {
+            margin-bottom: 14px; padding-right: 28px; color: #8cff95; font-size: 24px;
+            text-shadow: 0 0 12px rgba(70,255,110,0.3);
+        }
+        #turret-upgrade-panel .panel-stats {
+            display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;
+            font-size: 16px;
+        }
+        #turret-upgrade-panel .panel-stat {
+            display: flex; justify-content: space-between; gap: 10px; color: #d5e8d5;
+        }
+        #turret-upgrade-panel .panel-stat-value { color: #fff; }
+        #turret-upgrade-action {
+            width: 100%; margin-top: 0; padding: 12px 14px; border-radius: 10px;
+            border: 1px solid #63d87c; background: linear-gradient(180deg, #2d9e47, #1d6f32);
+            color: #fff; display: flex; flex-direction: column; align-items: flex-start;
+            gap: 3px; text-align: left; box-shadow: 0 0 16px rgba(0,255,90,0.18);
+        }
+        #turret-upgrade-action:hover:not(:disabled) {
+            background: linear-gradient(180deg, #39b957, #24873d);
+        }
+        #turret-upgrade-action:disabled {
+            background: linear-gradient(180deg, #3a3a3a, #252525);
+            border-color: #666; color: #aaa; cursor: not-allowed; box-shadow: none;
+        }
+        #turret-upgrade-action .upgrade-heading { font-size: 18px; }
+        #turret-upgrade-action .upgrade-detail,
+        #turret-upgrade-action .upgrade-cost { font-size: 14px; color: inherit; }
+        #turret-upgrade-max {
+            display: none; margin-top: 8px; padding: 12px 14px; text-align: center;
+            border: 1px solid #5bbb74; border-radius: 10px; color: #8cff95; font-size: 18px;
+            background: rgba(22,54,28,0.75);
+        }
     </style>
 </head>
 <body>
@@ -203,7 +250,7 @@
         <div class="legend-key"><span class="key">Click</span> Place</div>
     </div>
     <div id="shop-bar">
-        <div class="shop-item" id="buy-turret" title="Shotgun Turret - 100 coins">
+        <div class="shop-item" id="buy-turret" title="Shotgun Turret - 150 coins">
             <div class="gun-display">
                 <svg class="gun-svg" viewBox="0 0 60 24" xmlns="http://www.w3.org/2000/svg">
                     <rect x="2" y="9" width="22" height="7" rx="1" fill="#5a3318"/><!-- stock -->
@@ -217,7 +264,7 @@
             <div class="label">Shotgun</div>
             <div class="cost">🪙 150</div>
         </div>
-        <div class="shop-item" id="buy-machinegun" title="Machine Gun Turret - 250 coins">
+        <div class="shop-item" id="buy-machinegun" title="Machine Gun Turret - 200 coins">
             <div class="gun-display">
                 <svg class="gun-svg" viewBox="0 0 60 24" xmlns="http://www.w3.org/2000/svg">
                     <rect x="2" y="10" width="16" height="6" rx="1" fill="#5a3318"/><!-- stock -->
@@ -231,7 +278,7 @@
             <div class="label">MG</div>
             <div class="cost">🪙 200</div>
         </div>
-        <div class="shop-item" id="buy-sniper" title="Sniper Turret - 500 coins (sees hidden zombies!)">
+        <div class="shop-item" id="buy-sniper" title="Sniper Turret - 350 coins (sees hidden zombies!)">
             <div class="gun-display">
                 <svg class="gun-svg" viewBox="0 0 60 24" xmlns="http://www.w3.org/2000/svg">
                     <rect x="2" y="11" width="18" height="5" rx="1" fill="#4a2a10"/><!-- stock -->
@@ -244,8 +291,23 @@
                 </svg>
             </div>
             <div class="label">Sniper</div>
-            <div class="cost">🪙 400</div>
+            <div class="cost">🪙 350</div>
         </div>
+    </div>
+    <div id="turret-upgrade-panel">
+        <button id="turret-upgrade-close" class="panel-close" type="button">×</button>
+        <div class="panel-title" id="turret-upgrade-name">🔫 Machine Gun Lv.1</div>
+        <div class="panel-stats">
+            <div class="panel-stat"><span>Reload</span><span class="panel-stat-value" id="turret-upgrade-reload">0.25s</span></div>
+            <div class="panel-stat"><span>Damage</span><span class="panel-stat-value" id="turret-upgrade-damage">10</span></div>
+            <div class="panel-stat"><span>Range</span><span class="panel-stat-value" id="turret-upgrade-range">7</span></div>
+        </div>
+        <button id="turret-upgrade-action" type="button">
+            <span class="upgrade-heading">⬆ UPGRADE</span>
+            <span class="upgrade-detail" id="turret-upgrade-next">15 dmg, 4 bps</span>
+            <span class="upgrade-cost" id="turret-upgrade-cost">🪙 300</span>
+        </button>
+        <div id="turret-upgrade-max">MAX LEVEL</div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -1423,7 +1485,7 @@
         12: { finalWave: true }
     };
 
-    let game = { running: false, wave: 1, zombiesRemaining: 0, spawnTimer: 0, spawnInterval: 30, betweenWaves: true, waveDelay: 0, waitingForBegin: false, spawnQueue: [], finalWave: createFinalWaveState() };
+    let game = { running: false, wave: 1, zombiesRemaining: 0, spawnTimer: 0, spawnInterval: 30, betweenWaves: true, waveDelay: 0, waitingForBegin: false, spawnQueue: [], selectedTurret: null, finalWave: createFinalWaveState() };
     let gameMap = 'house';
     let generator = { hp: 100, maxHp: 100 };
     let necromancer = null;
@@ -2126,23 +2188,133 @@
 
     const turretStats = {
         shotgun:    { cost: 150, fireRate: 45, range: 4, damage: 20, type: 'shotgun', pellets: 6 },
-        machinegun: { cost: 200, fireRate: 60, range: 7, damage: 5, type: 'machinegun' },
-        sniper:     { cost: 400, fireRate: 120, range: 12, damage: 250, type: 'sniper' }
+        machinegun: { cost: 200, fireRate: 15, range: 7, damage: 10, type: 'machinegun' },
+        sniper:     { cost: 350, fireRate: 120, range: 12, damage: 100, type: 'sniper' }
     };
     // Upgrade definitions: [cost, stats to merge]
     const mgUpgrades = [
-        { cost: 150, damage: 7, fireRate: 60, label: 'MG Lv2: 7 dmg' },
-        { cost: 300, damage: 6, fireRate: 30, label: 'MG Lv3: 2 bps' },
-        { cost: 600, damage: 7, fireRate: 20, label: 'MG Lv4: 3 bps' }
+        { cost: 300, damage: 15, fireRate: 15, label: 'MG Lv2: 15 dmg, 4 bps' },
+        { cost: 500, damage: 20, fireRate: 12, label: 'MG Lv3: 20 dmg, 5 bps' },
+        { cost: 1000, damage: 20, fireRate: 9, label: 'MG Lv4: 20 dmg, 7 bps' }
     ];
     const shotgunUpgrades = [
         { cost: 200, damage: 25, pellets: 8, label: 'SG Lv2: 8 pellets' },
         { cost: 700, damage: 30, pellets: 12, burstCount: 3, label: 'SG Lv3: Triple burst' }
     ];
+    const sniperUpgrades = [
+        { cost: 200, damage: 100, fireRate: 90, label: 'Sniper Lv2: 100 dmg, 1.5s reload' },
+        { cost: 600, damage: 200, fireRate: 90, label: 'Sniper Lv3: 200 dmg, 1.5s reload' },
+        { cost: 1200, damage: 250, fireRate: 60, label: 'Sniper Lv4: 250 dmg, 1s reload' }
+    ];
+    const turretUpgradePanel = document.getElementById('turret-upgrade-panel');
+    const turretUpgradeName = document.getElementById('turret-upgrade-name');
+    const turretUpgradeReload = document.getElementById('turret-upgrade-reload');
+    const turretUpgradeDamage = document.getElementById('turret-upgrade-damage');
+    const turretUpgradeRange = document.getElementById('turret-upgrade-range');
+    const turretUpgradeAction = document.getElementById('turret-upgrade-action');
+    const turretUpgradeNext = document.getElementById('turret-upgrade-next');
+    const turretUpgradeCost = document.getElementById('turret-upgrade-cost');
+    const turretUpgradeMax = document.getElementById('turret-upgrade-max');
+
+    function getTurretTypeLabel(type) {
+        if (type === 'machinegun') return '🔫 Machine Gun';
+        if (type === 'sniper') return '🎯 Sniper';
+        return '💥 Shotgun';
+    }
+
+    function getTurretUpgrades(type) {
+        if (type === 'machinegun') return mgUpgrades;
+        if (type === 'sniper') return sniperUpgrades;
+        return shotgunUpgrades;
+    }
+
+    function formatReloadSeconds(fireRate) {
+        return `${parseFloat((fireRate / 60).toFixed(2))}s`;
+    }
+
+    function formatBulletsPerSecond(fireRate) {
+        return `${Math.round(60 / fireRate)} bps`;
+    }
+
+    function getUpgradeSummary(turret, upgrade) {
+        const summary = [];
+        if (upgrade.damage !== undefined) summary.push(`${upgrade.damage} dmg`);
+        if (turret.type === 'shotgun') {
+            if (upgrade.pellets !== undefined) summary.push(`${upgrade.pellets} pellets`);
+            if (upgrade.burstCount !== undefined) summary.push(`x${upgrade.burstCount} burst`);
+        } else if (turret.type === 'sniper') {
+            summary.push(`${formatReloadSeconds(upgrade.fireRate !== undefined ? upgrade.fireRate : turret.fireRate)} reload`);
+        } else {
+            summary.push(formatBulletsPerSecond(upgrade.fireRate !== undefined ? upgrade.fireRate : turret.fireRate));
+        }
+        return summary.join(', ');
+    }
+
+    function flashTurretUpgrade(turret) {
+        turret.mesh.traverse(c => {
+            if (c.isMesh) {
+                const orig = c.material.color.getHex();
+                c.material.color.set(0x44ff44);
+                setTimeout(() => c.material.color.set(orig), 200);
+            }
+        });
+    }
+
+    function hideTurretUpgradePanel() {
+        game.selectedTurret = null;
+        turretUpgradePanel.style.display = 'none';
+    }
+
+    function refreshTurretUpgradePanel() {
+        const turret = game.selectedTurret;
+        if (!turret || !turrets.includes(turret)) {
+            hideTurretUpgradePanel();
+            return;
+        }
+        const upgrades = getTurretUpgrades(turret.type);
+        const nextUpgrade = upgrades[turret.upgradeLevel];
+        turretUpgradeName.textContent = `${getTurretTypeLabel(turret.type)} Lv.${turret.upgradeLevel + 1}`;
+        turretUpgradeReload.textContent = formatReloadSeconds(turret.fireRate);
+        turretUpgradeDamage.textContent = turret.damage;
+        turretUpgradeRange.textContent = turret.range;
+        turretUpgradePanel.style.display = 'block';
+        if (!nextUpgrade) {
+            turretUpgradeAction.style.display = 'none';
+            turretUpgradeMax.style.display = 'block';
+            return;
+        }
+        turretUpgradeAction.style.display = 'flex';
+        turretUpgradeMax.style.display = 'none';
+        turretUpgradeNext.textContent = getUpgradeSummary(turret, nextUpgrade);
+        turretUpgradeCost.textContent = `🪙 ${nextUpgrade.cost}`;
+        turretUpgradeAction.disabled = coins < nextUpgrade.cost;
+    }
+
+    function showTurretUpgradePanel(turret) {
+        game.selectedTurret = turret;
+        refreshTurretUpgradePanel();
+    }
+
+    function upgradeTurret(turret) {
+        if (!turret) return;
+        const upgrades = getTurretUpgrades(turret.type);
+        const upgrade = upgrades[turret.upgradeLevel];
+        if (!upgrade || coins < upgrade.cost) return;
+        coins -= upgrade.cost;
+        turret.upgradeLevel++;
+        if (upgrade.damage !== undefined) turret.damage = upgrade.damage;
+        if (upgrade.fireRate !== undefined) turret.fireRate = upgrade.fireRate;
+        if (upgrade.pellets !== undefined) turret.pellets = upgrade.pellets;
+        if (upgrade.burstCount !== undefined) turret.burstCount = upgrade.burstCount;
+        flashTurretUpgrade(turret);
+        updateHUD();
+        refreshTurretUpgradePanel();
+    }
 
     function startPlacement(type) {
         const stats = turretStats[type];
         if (coins < stats.cost || placementMode) return;
+        hideTurretUpgradePanel();
         placementMode = true;
         placementType = type;
         placementRotation = 0;
@@ -2338,39 +2510,34 @@
         if (e.key === 'Escape' || e.key === 'q') cancelPlacement();
     });
 
-    // Left click to place
+    // Left click to place or inspect turret upgrades
     renderer.domElement.addEventListener('mousedown', e => {
-        if (e.button === 0 && placementMode) {
+        if (e.button !== 0) return;
+        if (placementMode) {
             confirmPlacement();
+            return;
         }
+        if (!game.running) return;
+        const clickedTurret = turrets.find(t => dist2D(mouseWorld.x, mouseWorld.z, t.x, t.z) < 1.5);
+        if (clickedTurret) {
+            showTurretUpgradePanel(clickedTurret);
+            return;
+        }
+        if (turretUpgradePanel.style.display === 'block') hideTurretUpgradePanel();
     });
 
-    // Right click to upgrade turret
-    renderer.domElement.addEventListener('contextmenu', e => {
-        e.preventDefault();
-        if (!game.running || placementMode) return;
-        // Find turret near mouse
-        for (const t of turrets) {
-            if (dist2D(mouseWorld.x, mouseWorld.z, t.x, t.z) < 1.5) {
-                let upgrades, level;
-                if (t.type === 'machinegun') { upgrades = mgUpgrades; level = t.upgradeLevel; }
-                else if (t.type === 'shotgun') { upgrades = shotgunUpgrades; level = t.upgradeLevel; }
-                else continue;
-                if (level >= upgrades.length) continue; // max level
-                const up = upgrades[level];
-                if (coins < up.cost) continue;
-                coins -= up.cost;
-                t.upgradeLevel++;
-                if (up.damage !== undefined) t.damage = up.damage;
-                if (up.fireRate !== undefined) t.fireRate = up.fireRate;
-                if (up.pellets !== undefined) t.pellets = up.pellets;
-                if (up.burstCount !== undefined) t.burstCount = up.burstCount;
-                // Visual feedback: flash turret green
-                t.mesh.traverse(c => { if (c.isMesh) { const orig = c.material.color.getHex(); c.material.color.set(0x44ff44); setTimeout(() => c.material.color.set(orig), 200); }});
-                updateHUD();
-                break;
-            }
-        }
+    document.addEventListener('mousedown', e => {
+        if (e.button !== 0) return;
+        if (turretUpgradePanel.style.display !== 'block') return;
+        if (turretUpgradePanel.contains(e.target) || e.target === renderer.domElement) return;
+        hideTurretUpgradePanel();
+    });
+
+    turretUpgradeAction.addEventListener('click', () => {
+        upgradeTurret(game.selectedTurret);
+    });
+    document.getElementById('turret-upgrade-close').addEventListener('click', () => {
+        hideTurretUpgradePanel();
     });
 
     // Zombie meshes
@@ -2921,7 +3088,8 @@
 
     function resetGame() {
         const previousFinalWave = game.finalWave;
-        game = { running: true, wave: 1, zombiesRemaining: 0, spawnTimer: 0, spawnInterval: 30, betweenWaves: true, waveDelay: 60, waitingForBegin: false, spawnQueue: [], finalWave: createFinalWaveState() };
+        game = { running: true, wave: 1, zombiesRemaining: 0, spawnTimer: 0, spawnInterval: 30, betweenWaves: true, waveDelay: 60, waitingForBegin: false, spawnQueue: [], selectedTurret: null, finalWave: createFinalWaveState() };
+        hideTurretUpgradePanel();
         generator.hp = 100;
         frontDoor.alive = true;
         if (!frontDoor.mesh.parent) scene.add(frontDoor.mesh);
@@ -3109,6 +3277,7 @@
             rising,
             riseY,
             baseY,
+            damage: opts.damage !== undefined ? opts.damage : 20,
             big: true
         }, opts));
     }
@@ -3199,7 +3368,7 @@
             rising,
             riseY,
             baseY,
-            damage: opts.damage !== undefined ? opts.damage : 7,
+            damage: opts.damage !== undefined ? opts.damage : 10,
             skeleton: true
         }, opts));
     }
@@ -3597,7 +3766,7 @@
 
             if (z.rising) {
                 z.riseTimer++;
-                const riseDuration = z.riseDuration || Math.round((z.king ? 55 : z.tank ? 45 : z.big || z.knight ? 30 : z.fast ? 15 : 20) / 0.75);
+                const riseDuration = z.riseDuration || Math.round((z.king ? 55 : z.tank ? 45 : z.big || z.knight ? 30 : z.fast ? 15 : 20) / 0.25);
                 const startY = z.riseY !== undefined ? z.riseY : (z.king ? -2.8 : z.tank ? -3.5 : z.big || z.knight ? -2.5 : z.fast ? -1.0 : -1.8);
                 const p = Math.min(z.riseTimer / riseDuration, 1);
                 z.mesh.position.y = startY + p * (baseY - startY);
@@ -3763,10 +3932,11 @@
                         z.attackPhase = 'strike';
                         z.attackTimer = 0;
                     } else if (z.attackPhase === 'strike' && z.attackTimer > 5) {
-                        const damage = z.damage || 10;
+                        const damage = z.damage || 5;
                         if (targetType === 'turret' && targetTurret) {
                             targetTurret.hp -= damage;
                             if (targetTurret.hp <= 0) {
+                                if (game.selectedTurret === targetTurret) hideTurretUpgradePanel();
                                 scene.remove(targetTurret.mesh);
                                 turrets.splice(turrets.indexOf(targetTurret), 1);
                                 z.attacking = false;
@@ -4174,6 +4344,7 @@
 
     function gameOver() {
         game.running = false;
+        hideTurretUpgradePanel();
         document.getElementById('game-over').style.display = 'flex';
         document.getElementById('final-score').textContent = `Generator destroyed on wave ${game.wave}!`;
     }
@@ -4236,8 +4407,9 @@
         if (coins >= 200) btn2.classList.remove('locked');
         else btn2.classList.add('locked');
         const btn3 = document.getElementById('buy-sniper');
-        if (coins >= 400) btn3.classList.remove('locked');
+        if (coins >= 350) btn3.classList.remove('locked');
         else btn3.classList.add('locked');
+        refreshTurretUpgradePanel();
     }
 
     // === GAME LOOP (60 FPS) ===
