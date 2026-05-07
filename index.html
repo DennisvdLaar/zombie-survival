@@ -2253,14 +2253,14 @@
 
     const turretStats = {
         shotgun:    { cost: 150, fireRate: 45, range: 4, damage: 20, type: 'shotgun', pellets: 6 },
-        machinegun: { cost: 200, fireRate: 14, range: 7, damage: 15, type: 'machinegun' },
+        machinegun: { cost: 200, fireRate: 14, range: 7, damage: 5, type: 'machinegun' },
         sniper:     { cost: 350, fireRate: 120, range: 12, damage: 100, type: 'sniper' }
     };
     // Upgrade definitions: [cost, stats to merge]
     const mgUpgrades = [
-        { cost: 300, damage: 20, fireRate: 14, label: 'MG Lv2: 20 dmg, 4 bps' },
-        { cost: 500, damage: 25, fireRate: 11, label: 'MG Lv3: 25 dmg, 5 bps' },
-        { cost: 1000, damage: 30, fireRate: 8, label: 'MG Lv4: 30 dmg, 8 bps' }
+        { cost: 300, damage: 7, fireRate: 19, label: 'MG Lv2: 7 dmg, +5 fire rate' },
+        { cost: 500, damage: 10, fireRate: 24, label: 'MG Lv3: 10 dmg, +5 fire rate' },
+        { cost: 2000, damage: 20, fireRate: 40, label: 'MG Lv4: 20 dmg, heavy rounds' }
     ];
     const shotgunUpgrades = [
         { cost: 200, damage: 25, pellets: 8, label: 'SG Lv2: 8 pellets' },
