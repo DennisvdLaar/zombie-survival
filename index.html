@@ -96,6 +96,20 @@
             display: flex; justify-content: space-between; gap: 10px; color: #d5e8d5;
         }
         #turret-upgrade-panel .panel-stat-value { color: #fff; }
+        #attack-hud, #attack-spawn-panel { display: none; }
+        .attack-spawn-btn {
+            min-width: 110px; color: #eee; cursor: pointer; text-align: center; padding: 10px 15px;
+            border-radius: 8px; transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s, opacity 0.18s;
+        }
+        .attack-spawn-btn:hover:not(.locked) {
+            transform: translateY(-4px); box-shadow: 0 0 18px rgba(255, 80, 80, 0.35);
+        }
+        .attack-spawn-btn.locked {
+            opacity: 0.42; filter: grayscale(0.4); cursor: not-allowed; box-shadow: none;
+        }
+        .attack-spawn-btn[data-type="normal"]:hover:not(.locked) { border-color: #7f7; }
+        .attack-spawn-btn[data-type="crawler"]:hover:not(.locked) { border-color: #dd7; }
+        .attack-spawn-btn[data-type="big"]:hover:not(.locked) { border-color: #f88; }
         #turret-upgrade-action {
             width: 100%; margin-top: 0; padding: 12px 14px; border-radius: 10px;
             border: 1px solid #63d87c; background: linear-gradient(180deg, #2d9e47, #1d6f32);
@@ -137,8 +151,7 @@
             <div id="mode-attack" class="mode-card" style="width:220px; padding:30px 20px; background:linear-gradient(180deg,#2a1a1a,#1a0a0a); border:3px solid #a44; border-radius:16px; cursor:pointer; text-align:center; transition:all 0.2s;">
                 <div style="font-size:48px; margin-bottom:12px;">⚔️</div>
                 <div style="font-size:22px; font-weight:bold; color:#f44; margin-bottom:8px;">ATTACK</div>
-                <div style="font-size:13px; color:#aaa; line-height:1.5;">Binnenkort beschikbaar...</div>
-                <div style="font-size:11px; color:#666; margin-top:8px;">🔒 COMING SOON</div>
+                <div style="font-size:13px; color:#aaa; line-height:1.5;">Bestuur de zombies en vernietig de generator!</div>
             </div>
         </div>
     </div>
@@ -231,6 +244,51 @@
             <div id="boss-hp-label" style="font-family:'Impact',sans-serif; font-size:18px; color:#cc66ff; text-shadow:0 0 8px #8800cc; margin-bottom:4px;">💀 BOSS — <span id="boss-hp-text">350/350</span> HP</div>
             <div id="boss-hp-bar" style="width:300px; height:16px; background:#222; border:2px solid #8844cc; border-radius:8px; overflow:hidden;">
                 <div id="boss-hp-fill" style="width:100%; height:100%; background:linear-gradient(90deg, #aa22ff, #cc66ff); transition:width 0.2s;"></div>
+            </div>
+        </div>
+    </div>
+    <div id="attack-hud" style="display:none; position:absolute; top:10px; left:50%; transform:translateX(-50%); gap:25px; background:rgba(25,0,0,0.78); padding:8px 20px; border-radius:6px; color:#eee; font-size:14px; z-index:5; border:1px solid #a44;">
+        <span>🧠 <span id="attack-brains" class="val" style="color:#f8b">0</span></span>
+        <span>❤️ Generator: <span id="attack-gen-hp" class="hp-val">100</span></span>
+        <span>📊 Wave: <span id="attack-wave" class="val" style="color:#fa4;">1/12</span></span>
+        <span>⏱️ <span id="attack-timer" class="val" style="color:#ff0;">2:00</span></span>
+    </div>
+    <div id="attack-spawn-panel" style="display:none; position:absolute; bottom:20px; left:50%; transform:translateX(-50%); gap:15px; background:rgba(0,0,0,0.85); padding:12px 20px; border-radius:10px; border:2px solid #a44; z-index:5;">
+        <div class="attack-spawn-btn" data-type="normal" id="spawn-normal" style="border:2px solid #5a5; background:rgba(30,50,30,0.9);">
+            <div style="font-size:28px;">🧟</div>
+            <div style="font-size:12px;color:#aaa;">Normal</div>
+            <div style="font-size:11px;color:#f8b;">20 🧠</div>
+        </div>
+        <div class="attack-spawn-btn" data-type="crawler" id="spawn-crawler" style="border:2px solid #aa5; background:rgba(50,50,20,0.9);">
+            <div style="font-size:28px;">🕷️</div>
+            <div style="font-size:12px;color:#aaa;">Crawler</div>
+            <div style="font-size:11px;color:#f8b;">60 🧠</div>
+        </div>
+        <div class="attack-spawn-btn" data-type="big" id="spawn-big" style="border:2px solid #a55; background:rgba(50,30,30,0.9);">
+            <div style="font-size:28px;">💀</div>
+            <div style="font-size:12px;color:#aaa;">Big Zombie</div>
+            <div style="font-size:11px;color:#f8b;">200 🧠</div>
+        </div>
+    </div>
+    <div id="attack-hole-select" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:20; color:#fff; font-family:'Segoe UI',sans-serif; flex-direction:column; align-items:center; justify-content:center;">
+        <h2 style="margin-bottom:20px; font-size:28px; color:#f44;">🕳️ KIES JE SPAWN HOLE</h2>
+        <p style="color:#aaa; margin-bottom:20px;">Waar wil je je zombies laten spawnen?</p>
+        <div style="display:flex; gap:20px;">
+            <div class="mode-card attack-hole-btn" data-hole="0" style="width:150px; padding:20px; background:linear-gradient(180deg,#2a1a1a,#1a0a0a); border:3px solid #a44; border-radius:12px; cursor:pointer; text-align:center;">
+                <div style="font-size:36px;">↖️</div>
+                <div style="font-size:14px; color:#aaa;">Links voor</div>
+            </div>
+            <div class="mode-card attack-hole-btn" data-hole="1" style="width:150px; padding:20px; background:linear-gradient(180deg,#2a1a1a,#1a0a0a); border:3px solid #a44; border-radius:12px; cursor:pointer; text-align:center;">
+                <div style="font-size:36px;">↗️</div>
+                <div style="font-size:14px; color:#aaa;">Rechts voor</div>
+            </div>
+            <div class="mode-card attack-hole-btn" data-hole="2" style="width:150px; padding:20px; background:linear-gradient(180deg,#2a1a1a,#1a0a0a); border:3px solid #a44; border-radius:12px; cursor:pointer; text-align:center;">
+                <div style="font-size:36px;">⬅️</div>
+                <div style="font-size:14px; color:#aaa;">Ver links</div>
+            </div>
+            <div class="mode-card attack-hole-btn" data-hole="3" style="width:150px; padding:20px; background:linear-gradient(180deg,#2a1a1a,#1a0a0a); border:3px solid #a44; border-radius:12px; cursor:pointer; text-align:center;">
+                <div style="font-size:36px;">➡️</div>
+                <div style="font-size:14px; color:#aaa;">Ver rechts</div>
             </div>
         </div>
     </div>
@@ -1487,6 +1545,13 @@
 
     let game = { running: false, wave: 1, zombiesRemaining: 0, spawnTimer: 0, spawnInterval: 30, betweenWaves: true, waveDelay: 0, waitingForBegin: false, spawnQueue: [], selectedTurret: null, finalWave: createFinalWaveState() };
     let gameMap = 'house';
+    let gameMode = 'defense';
+    let brains = 0;
+    const attackWaveBudgets = [100, 100, 150, 300, 450, 500, 1200, 1500, 1600, 1700, 1900, 2000];
+    const attackZombieCosts = { normal: 20, crawler: 60, big: 200 };
+    let attackWaveTimer = 0;
+    const attackTotalWaves = 12;
+    let attackSpawnedZombies = [];
     let generator = { hp: 100, maxHp: 100 };
     let necromancer = null;
     const kingTaunt = document.getElementById('king-taunt');
@@ -1827,7 +1892,7 @@
             if (dist2D(n.x, n.z, gcx, gcz) < 1.5) {
                 if (n.spawnTimer % 60 === 0) {
                     generator.hp -= 10;
-                    if (generator.hp <= 0) gameOver();
+                    if (generator.hp <= 0) handleGeneratorDestroyed();
                 }
             }
         }
@@ -2188,14 +2253,14 @@
 
     const turretStats = {
         shotgun:    { cost: 150, fireRate: 45, range: 4, damage: 20, type: 'shotgun', pellets: 6 },
-        machinegun: { cost: 200, fireRate: 15, range: 7, damage: 10, type: 'machinegun' },
+        machinegun: { cost: 200, fireRate: 14, range: 7, damage: 15, type: 'machinegun' },
         sniper:     { cost: 350, fireRate: 120, range: 12, damage: 100, type: 'sniper' }
     };
     // Upgrade definitions: [cost, stats to merge]
     const mgUpgrades = [
-        { cost: 300, damage: 15, fireRate: 15, label: 'MG Lv2: 15 dmg, 4 bps' },
-        { cost: 500, damage: 20, fireRate: 12, label: 'MG Lv3: 20 dmg, 5 bps' },
-        { cost: 1000, damage: 20, fireRate: 9, label: 'MG Lv4: 20 dmg, 7 bps' }
+        { cost: 300, damage: 20, fireRate: 14, label: 'MG Lv2: 20 dmg, 4 bps' },
+        { cost: 500, damage: 25, fireRate: 11, label: 'MG Lv3: 25 dmg, 5 bps' },
+        { cost: 1000, damage: 30, fireRate: 8, label: 'MG Lv4: 30 dmg, 8 bps' }
     ];
     const shotgunUpgrades = [
         { cost: 200, damage: 25, pellets: 8, label: 'SG Lv2: 8 pellets' },
@@ -2313,7 +2378,7 @@
 
     function startPlacement(type) {
         const stats = turretStats[type];
-        if (coins < stats.cost || placementMode) return;
+        if (gameMode === 'attack' || coins < stats.cost || placementMode) return;
         hideTurretUpgradePanel();
         placementMode = true;
         placementType = type;
@@ -2424,6 +2489,45 @@
         });
     }
 
+    function createTurretRecord(type, x, z, facing) {
+        const stats = turretStats[type];
+        const mesh = (type === 'machinegun') ? createMGTurretMesh(x, z) : (type === 'sniper') ? createSniperTurretMesh(x, z) : createTurretMesh(x, z);
+        mesh.rotation.y = facing;
+        return { x, z, mesh, fireTimer: 0, fireRate: stats.fireRate, range: stats.range, damage: stats.damage, facing, type: stats.type, recoilTimer: 0, hp: 100, upgradeLevel: 0, pellets: stats.pellets || 1, burstCount: 1, burstFired: 0, burstCooldown: 0 };
+    }
+
+    function applyTurretUpgradeStats(turret, upgrade) {
+        turret.upgradeLevel++;
+        if (upgrade.damage !== undefined) turret.damage = upgrade.damage;
+        if (upgrade.fireRate !== undefined) turret.fireRate = upgrade.fireRate;
+        if (upgrade.pellets !== undefined) turret.pellets = upgrade.pellets;
+        if (upgrade.burstCount !== undefined) turret.burstCount = upgrade.burstCount;
+    }
+
+    function addTurretInstance(type, x, z, facing, upgradeLevels) {
+        if (isPlacementBlocked(x, z)) return null;
+        const turret = createTurretRecord(type, x, z, facing || 0);
+        const upgrades = getTurretUpgrades(type);
+        for (let i = 0; i < (upgradeLevels || 0); i++) {
+            if (upgrades[i]) applyTurretUpgradeStats(turret, upgrades[i]);
+        }
+        turrets.push(turret);
+        return turret;
+    }
+
+    function placeAttackTurrets() {
+        [
+            { x: 0.5, z: 7.5, type: 'shotgun', facing: Math.PI, upgrade: 1 },
+            { x: -2, z: 5, type: 'machinegun', facing: 0, upgrade: 1 },
+            { x: 3, z: 5, type: 'machinegun', facing: 0, upgrade: 2 },
+            { x: -8, z: 3, type: 'shotgun', facing: Math.PI / 2, upgrade: 1 },
+            { x: 7, z: 3, type: 'shotgun', facing: -Math.PI / 2, upgrade: 1 },
+            { x: -8, z: -3, type: 'sniper', facing: 0, upgrade: 2 },
+            { x: 0.5, z: -3, type: 'machinegun', facing: 0, upgrade: 2 },
+            { x: 7, z: -3, type: 'shotgun', facing: -Math.PI / 2, upgrade: 1 }
+        ].forEach(cfg => addTurretInstance(cfg.type, cfg.x, cfg.z, cfg.facing, cfg.upgrade));
+    }
+
     function confirmPlacement() {
         if (!placementMode || !placementGhost) return;
         if (!placementValid) return;
@@ -2433,9 +2537,7 @@
         document.getElementById('blueprint-legend').style.display = 'none';
         const stats = turretStats[placementType];
         coins -= stats.cost;
-        const mesh = (placementType === 'machinegun') ? createMGTurretMesh(mouseWorld.x, mouseWorld.z) : (placementType === 'sniper') ? createSniperTurretMesh(mouseWorld.x, mouseWorld.z) : createTurretMesh(mouseWorld.x, mouseWorld.z);
-        mesh.rotation.y = placementRotation;
-        turrets.push({ x: mouseWorld.x, z: mouseWorld.z, mesh, fireTimer: 0, fireRate: stats.fireRate, range: stats.range, damage: stats.damage, facing: placementRotation, type: stats.type, recoilTimer: 0, hp: 100, upgradeLevel: 0, pellets: stats.pellets || 1, burstCount: 1, burstFired: 0, burstCooldown: 0 });
+        addTurretInstance(placementType, mouseWorld.x, mouseWorld.z, placementRotation, 0);
         updateHUD();
     }
 
@@ -2520,7 +2622,8 @@
         if (!game.running) return;
         const clickedTurret = turrets.find(t => dist2D(mouseWorld.x, mouseWorld.z, t.x, t.z) < 1.5);
         if (clickedTurret) {
-            showTurretUpgradePanel(clickedTurret);
+            if (gameMode !== 'attack') showTurretUpgradePanel(clickedTurret);
+            else hideTurretUpgradePanel();
             return;
         }
         if (turretUpgradePanel.style.display === 'block') hideTurretUpgradePanel();
@@ -3090,7 +3193,12 @@
         const previousFinalWave = game.finalWave;
         game = { running: true, wave: 1, zombiesRemaining: 0, spawnTimer: 0, spawnInterval: 30, betweenWaves: true, waveDelay: 60, waitingForBegin: false, spawnQueue: [], selectedTurret: null, finalWave: createFinalWaveState() };
         hideTurretUpgradePanel();
-        generator.hp = 100;
+        cancelPlacement();
+        generator.hp = gameMode === 'attack' ? 500 : 100;
+        generator.maxHp = gameMode === 'attack' ? 500 : 100;
+        brains = 0;
+        attackWaveTimer = 0;
+        attackSpawnedZombies = [];
         frontDoor.alive = true;
         if (!frontDoor.mesh.parent) scene.add(frontDoor.mesh);
         spawnHoles.length = 0;
@@ -3125,6 +3233,22 @@
         genGlow.material.color.set(0x00aaff);
         genLight.color.set(0x00aaff);
         applyMapLayout();
+        if (gameMode === 'attack') moveGenerator('hallway');
+        if (gameMode === 'attack') {
+            placeAttackTurrets();
+            if (frontDoor.mesh.parent) scene.remove(frontDoor.mesh);
+            frontDoor.alive = false;
+            document.getElementById('hud').style.display = 'none';
+            document.getElementById('attack-hud').style.display = 'flex';
+            document.getElementById('attack-spawn-panel').style.display = 'flex';
+            document.getElementById('shop-bar').style.display = 'none';
+            document.getElementById('begin-btn').style.display = 'none';
+        } else {
+            document.getElementById('hud').style.display = 'flex';
+            document.getElementById('attack-hud').style.display = 'none';
+            document.getElementById('attack-spawn-panel').style.display = 'none';
+            document.getElementById('shop-bar').style.display = 'none';
+        }
         updateHUD();
     }
 
@@ -3245,7 +3369,7 @@
         const opts = options || {};
         const origin = getSpawnOrigin(opts);
         const mesh = createZombieMesh();
-        const hp = opts.hp !== undefined ? opts.hp : 100;
+        const hp = opts.hp !== undefined ? opts.hp : 50;
         const baseY = opts.baseY !== undefined ? opts.baseY : 0;
         const rising = opts.rising !== undefined ? opts.rising : true;
         const riseY = opts.riseY !== undefined ? opts.riseY : -1.8;
@@ -3608,6 +3732,65 @@
         buildWaveQueue(def);
     }
 
+    function startAttackWave() {
+        if (!game.running) return;
+        if (game.wave > attackTotalWaves) {
+            attackGameOver(false);
+            return;
+        }
+        game.betweenWaves = false;
+        game.spawnTimer = 0;
+        game.spawnQueue = [];
+        game.zombiesRemaining = 0;
+        attackSpawnedZombies = [];
+        brains += attackWaveBudgets[Math.min(game.wave - 1, attackWaveBudgets.length - 1)] || 0;
+        attackWaveTimer = (120 + (game.wave - 1) * 30) * 60;
+        updateHUD();
+    }
+
+    function finishAttackWave() {
+        attackWaveTimer = 0;
+        attackSpawnedZombies = [];
+        if (game.wave >= attackTotalWaves) {
+            attackGameOver(false);
+            return;
+        }
+        game.wave++;
+        game.betweenWaves = true;
+        game.waveDelay = 180;
+        updateHUD();
+    }
+
+    function attackSpawnZombie(type) {
+        const cost = attackZombieCosts[type];
+        if (brains < cost || !game.running || game.betweenWaves || game.waitingForBegin || spawnHoles.length === 0) return;
+        brains -= cost;
+        const hole = spawnHoles[0];
+        const opts = { x: hole.x + (Math.random() - 0.5) * 2, z: hole.z + (Math.random() - 0.5) * 2 };
+        let zombie = null;
+        if (type === 'normal') zombie = spawnZombie(opts);
+        else if (type === 'crawler') zombie = spawnFastZombie(opts);
+        else if (type === 'big') zombie = spawnBigZombie(opts);
+        if (zombie) attackSpawnedZombies.push(zombie);
+        updateHUD();
+    }
+
+    function selectAttackHole(index) {
+        document.getElementById('attack-hole-select').style.display = 'none';
+        gameMap = 'house';
+        moveGenerator('hallway');
+        resetGame();
+        const mesh = spawnHoleMeshes[index];
+        if (!mesh) return;
+        spawnHoles.length = 0;
+        spawnHoles.push({ x: mesh.position.x, z: mesh.position.z, activeSinceWave: 1, mesh });
+        mesh.visible = true;
+        mesh.scale.set(1, 1, 1);
+        mesh.userData.shrinking = false;
+        game.waitingForBegin = false;
+        startAttackWave();
+    }
+
     function spawnTankZombie() {
         // Pick a random side (left or right) if no tank hole exists yet
         let side, holeX, holeZ;
@@ -3715,11 +3898,26 @@
 
         if (game.betweenWaves) {
             game.waveDelay--;
-            if (game.waveDelay <= 0) startWave();
-            return;
+            if (game.waveDelay <= 0) {
+                if (gameMode === 'attack') startAttackWave();
+                else startWave();
+            }
+            if (gameMode !== 'attack') {
+                updateHUD();
+                return;
+            }
         }
 
-        if (game.spawnQueue && game.spawnQueue.length > 0) {
+        if (gameMode === 'attack' && !game.betweenWaves && !game.waitingForBegin) {
+            if (attackWaveTimer > 0) attackWaveTimer--;
+            const hadSpawnedThisWave = attackSpawnedZombies.length > 0;
+            attackSpawnedZombies = attackSpawnedZombies.filter(z => zombies.includes(z) && z.hp > 0);
+            if (attackWaveTimer <= 0 || (hadSpawnedThisWave && attackSpawnedZombies.length === 0)) {
+                finishAttackWave();
+            }
+        }
+
+        if (gameMode !== 'attack' && game.spawnQueue && game.spawnQueue.length > 0) {
             game.spawnTimer++;
             if (game.spawnTimer >= game.spawnInterval) {
                 spawnFromQueue(game.spawnQueue.shift());
@@ -3728,9 +3926,9 @@
             }
         }
 
-        updateFinalWaveEvent();
+        if (gameMode !== 'attack') updateFinalWaveEvent();
 
-        const commander = zombies.find(z => z.commander);
+        const commander = gameMode !== 'attack' ? zombies.find(z => z.commander) : null;
         if (commander) {
             if (commander.commanderPhase === 1) {
                 for (let row = 0; row < 10; row++) spawnCommanderArmyRow(commander, row, 5, 1);
@@ -3766,7 +3964,7 @@
 
             if (z.rising) {
                 z.riseTimer++;
-                const riseDuration = z.riseDuration || Math.round((z.king ? 55 : z.tank ? 45 : z.big || z.knight ? 30 : z.fast ? 15 : 20) / 0.25);
+                const riseDuration = z.riseDuration || Math.round((z.king ? 55 : z.tank ? 45 : z.big || z.knight ? 30 : z.fast ? 15 : 20) / 0.5);
                 const startY = z.riseY !== undefined ? z.riseY : (z.king ? -2.8 : z.tank ? -3.5 : z.big || z.knight ? -2.5 : z.fast ? -1.0 : -1.8);
                 const p = Math.min(z.riseTimer / riseDuration, 1);
                 z.mesh.position.y = startY + p * (baseY - startY);
@@ -3945,7 +4143,7 @@
                             }
                         } else {
                             generator.hp -= damage;
-                            if (generator.hp <= 0) gameOver();
+                            if (generator.hp <= 0) handleGeneratorDestroyed();
                         }
                         z.attackPhase = 'recover';
                         z.attackTimer = 0;
@@ -4319,19 +4517,20 @@
             if (zombies[i].hp <= 0) {
                 scene.remove(zombies[i].mesh);
                 zombieMeshes.splice(zombieMeshes.indexOf(zombies[i].mesh), 1);
-                coins += zombies[i].coinReward || 10;
+                if (gameMode !== 'attack') coins += zombies[i].coinReward || 25;
                 zombies.splice(i, 1);
             }
         }
 
-        const necAlive = necromancer && necromancer.alive;
-        if (!game.waitingForBegin && !game.finalWave.active && (!game.spawnQueue || game.spawnQueue.length === 0) && zombies.length === 0 && !necAlive) {
+        const necAlive = gameMode !== 'attack' && necromancer && necromancer.alive;
+        if (gameMode !== 'attack' && !game.waitingForBegin && !game.finalWave.active && (!game.spawnQueue || game.spawnQueue.length === 0) && zombies.length === 0 && !necAlive) {
             if (game.wave < 12) {
                 game.wave++;
                 game.betweenWaves = true;
                 game.waveDelay = 120;
             }
         }
+        if (generator.hp <= 0) handleGeneratorDestroyed();
 
         const hpRatio = generator.hp / generator.maxHp;
         if (hpRatio > 0.5) { genGlow.material.color.set(0x00aaff); genLight.color.set(0x00aaff); }
@@ -4345,8 +4544,30 @@
     function gameOver() {
         game.running = false;
         hideTurretUpgradePanel();
-        document.getElementById('game-over').style.display = 'flex';
+        document.querySelector('#game-over h2').textContent = '💀 GENERATOR DESTROYED';
         document.getElementById('final-score').textContent = `Generator destroyed on wave ${game.wave}!`;
+        document.getElementById('game-over').style.display = 'flex';
+    }
+
+    function attackGameOver(won) {
+        if (!game.running) return;
+        game.running = false;
+        hideTurretUpgradePanel();
+        document.querySelector('#game-over h2').textContent = won ? '🧟 GENERATOR VERNIETIGD! 🧟' : 'De generator heeft het overleefd!';
+        document.getElementById('final-score').textContent = won
+            ? `Je hebt de generator vernietigd in wave ${game.wave}!`
+            : 'Alle 12 waves zijn voorbij en de generator leeft nog.';
+        document.getElementById('game-over').style.display = 'flex';
+    }
+
+    function attackVictory() {
+        attackGameOver(true);
+    }
+
+    function handleGeneratorDestroyed() {
+        if (!game.running) return;
+        if (gameMode === 'attack') attackVictory();
+        else gameOver();
     }
 
     function updateHUD() {
@@ -4354,6 +4575,19 @@
         document.getElementById('zombie-count').textContent = zombies.length;
         document.getElementById('gen-hp').textContent = generator.hp;
         document.getElementById('coins').textContent = coins;
+        if (gameMode === 'attack') {
+            document.getElementById('attack-brains').textContent = brains;
+            document.getElementById('attack-gen-hp').textContent = Math.max(0, Math.round(generator.hp));
+            document.getElementById('attack-wave').textContent = game.wave + '/' + attackTotalWaves;
+            if (game.betweenWaves && !game.waitingForBegin) {
+                document.getElementById('attack-timer').textContent = 'NEXT';
+            } else {
+                const secs = Math.ceil(attackWaveTimer / 60);
+                const min = Math.floor(secs / 60);
+                const sec = secs % 60;
+                document.getElementById('attack-timer').textContent = min + ':' + String(sec).padStart(2, '0');
+            }
+        }
         const el = document.getElementById('gen-hp');
         el.style.color = generator.hp > 50 ? '#4af' : generator.hp > 25 ? '#fa0' : '#f44';
         const bossDiv = document.getElementById('boss-hp');
@@ -4409,6 +4643,11 @@
         const btn3 = document.getElementById('buy-sniper');
         if (coins >= 350) btn3.classList.remove('locked');
         else btn3.classList.add('locked');
+        if (gameMode === 'attack') {
+            document.getElementById('spawn-normal').classList.toggle('locked', !game.running || game.betweenWaves || game.waitingForBegin || brains < attackZombieCosts.normal);
+            document.getElementById('spawn-crawler').classList.toggle('locked', !game.running || game.betweenWaves || game.waitingForBegin || brains < attackZombieCosts.crawler);
+            document.getElementById('spawn-big').classList.toggle('locked', !game.running || game.betweenWaves || game.waitingForBegin || brains < attackZombieCosts.big);
+        }
         refreshTurretUpgradePanel();
     }
 
@@ -4478,6 +4717,8 @@
         card.addEventListener('mouseout', () => { card.style.transform = 'scale(1)'; card.style.boxShadow = 'none'; });
     });
     document.getElementById('mode-defense').addEventListener('click', () => {
+        gameMode = 'defense';
+        document.getElementById('attack-hole-select').style.display = 'none';
         document.getElementById('mode-select').style.display = 'none';
         document.getElementById('map-select').style.display = 'flex';
     });
@@ -4485,9 +4726,9 @@
         gameMap = 'hall';
         document.getElementById('map-select').style.display = 'none';
         moveGenerator('hallway');
+        resetGame();
         document.getElementById('shop-bar').style.display = 'flex';
         document.getElementById('begin-btn').style.display = 'block';
-        resetGame();
         game.betweenWaves = false;
         game.waitingForBegin = true;
     });
@@ -4498,7 +4739,12 @@
         applyMapLayout();
     });
     document.getElementById('mode-attack').addEventListener('click', () => {
-        // Attack mode - coming soon, for now just show alert
+        gameMode = 'attack';
+        gameMap = 'house';
+        document.getElementById('mode-select').style.display = 'none';
+        document.getElementById('map-select').style.display = 'none';
+        document.getElementById('room-select').style.display = 'none';
+        document.getElementById('attack-hole-select').style.display = 'flex';
     });
     document.querySelectorAll('.room-btn').forEach(btn => {
         btn.addEventListener('mouseover', () => {
@@ -4513,14 +4759,15 @@
             const room = btn.dataset.room;
             moveGenerator(room);
             document.getElementById('room-select').style.display = 'none';
+            resetGame();
             document.getElementById('shop-bar').style.display = 'flex';
             document.getElementById('begin-btn').style.display = 'block';
-            resetGame();
             game.betweenWaves = false;
             game.waitingForBegin = true; // don't auto-start waves yet
         });
     });
     document.getElementById('begin-btn').addEventListener('click', () => {
+        if (gameMode === 'attack') return;
         document.getElementById('begin-btn').style.display = 'none';
         // Open the door
         if (frontDoor.alive) {
@@ -4534,6 +4781,14 @@
     });
     document.getElementById('restart-btn').addEventListener('click', () => {
         document.getElementById('game-over').style.display = 'none';
+        document.getElementById('map-select').style.display = 'none';
+        document.getElementById('room-select').style.display = 'none';
+        document.getElementById('attack-hole-select').style.display = 'none';
+        document.getElementById('hud').style.display = 'none';
+        document.getElementById('attack-hud').style.display = 'none';
+        document.getElementById('attack-spawn-panel').style.display = 'none';
+        document.getElementById('shop-bar').style.display = 'none';
+        document.getElementById('begin-btn').style.display = 'none';
         document.getElementById('mode-select').style.display = 'flex';
     });
     document.getElementById('buy-turret').addEventListener('click', () => {
@@ -4544,6 +4799,12 @@
     });
     document.getElementById('buy-sniper').addEventListener('click', () => {
         if (game.running) startPlacement('sniper');
+    });
+    document.getElementById('spawn-normal').addEventListener('click', () => attackSpawnZombie('normal'));
+    document.getElementById('spawn-crawler').addEventListener('click', () => attackSpawnZombie('crawler'));
+    document.getElementById('spawn-big').addEventListener('click', () => attackSpawnZombie('big'));
+    document.querySelectorAll('.attack-hole-btn').forEach(btn => {
+        btn.addEventListener('click', () => selectAttackHole(parseInt(btn.dataset.hole, 10)));
     });
 
     animate();
