@@ -2517,14 +2517,8 @@
 
     function placeAttackTurrets() {
         [
-            { x: 0.5, z: 7.5, type: 'shotgun', facing: Math.PI, upgrade: 1 },
-            { x: -2, z: 5, type: 'machinegun', facing: 0, upgrade: 1 },
-            { x: 3, z: 5, type: 'machinegun', facing: 0, upgrade: 2 },
-            { x: -8, z: 3, type: 'shotgun', facing: Math.PI / 2, upgrade: 1 },
-            { x: 7, z: 3, type: 'shotgun', facing: -Math.PI / 2, upgrade: 1 },
-            { x: -8, z: -3, type: 'sniper', facing: 0, upgrade: 2 },
-            { x: 0.5, z: -3, type: 'machinegun', facing: 0, upgrade: 2 },
-            { x: 7, z: -3, type: 'shotgun', facing: -Math.PI / 2, upgrade: 1 }
+            { x: -2.5, z: 8, type: 'machinegun', facing: 0, upgrade: 1 },
+            { x: 3.5, z: 8, type: 'machinegun', facing: 0, upgrade: 1 }
         ].forEach(cfg => addTurretInstance(cfg.type, cfg.x, cfg.z, cfg.facing, cfg.upgrade));
     }
 
@@ -3233,7 +3227,7 @@
         genGlow.material.color.set(0x00aaff);
         genLight.color.set(0x00aaff);
         applyMapLayout();
-        if (gameMode === 'attack') moveGenerator('hallway');
+        if (gameMode === 'attack') moveGenerator('dining');
         if (gameMode === 'attack') {
             placeAttackTurrets();
             if (frontDoor.mesh.parent) scene.remove(frontDoor.mesh);
@@ -3778,7 +3772,7 @@
     function selectAttackHole(index) {
         document.getElementById('attack-hole-select').style.display = 'none';
         gameMap = 'house';
-        moveGenerator('hallway');
+        moveGenerator('dining');
         resetGame();
         const mesh = spawnHoleMeshes[index];
         if (!mesh) return;
