@@ -4164,6 +4164,17 @@
                     newX = col.x;
                     newZ = col.z;
                 }
+                // Exterior wall collision — prevent walking through walls from outside
+                if (!inside && !z.tank && !z.fromSide && gameMap !== 'hall') {
+                    const wr = 0.4;
+                    // Front wall with door gap (door opening at x ≈ -0.9 to 0.9)
+                    if (newZ < HD / 2 + wr && (newX < -0.9 || newX > 0.9)) {
+                        newZ = HD / 2 + wr;
+                    }
+                    // Side walls
+                    if (newX < -HW / 2 + wr) newX = -HW / 2 + wr;
+                    if (newX > HW / 2 - wr) newX = HW / 2 - wr;
+                }
                 z.x = newX;
                 z.z = newZ;
                 z.mesh.rotation.y = angle;
