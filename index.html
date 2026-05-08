@@ -4049,7 +4049,7 @@
                 fw.spawned = 0;
             }
         } else if (fw.phase === 3) {
-            if (fw.spawned < 120 && fw.spawnTimer >= 600) {
+            if (fw.spawned < 120 && fw.spawnTimer >= 120) {
                 fw.spawnTimer = 0;
                 const batch = Math.min(fw.holes.length, 120 - fw.spawned);
                 spawnFromFinalHoles(batch, hole => spawnSkeleton({ holes: [hole], finalWaveTag: 'sub3' }));
