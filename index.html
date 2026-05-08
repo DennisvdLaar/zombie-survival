@@ -4154,7 +4154,8 @@
                 const mz = Math.cos(angle) * z.speed;
                 let newX = z.x + mx, newZ = z.z + mz;
                 if (inside && !directGenerator && gameMap !== 'hall') {
-                    const col = collideWalls(newX, newZ, 0.4);
+                    const wallR = z.big || z.king || z.knight || z.tank ? 0.7 : 0.4;
+                    const col = collideWalls(newX, newZ, wallR);
                     newX = col.x;
                     newZ = col.z;
                 }
@@ -4310,6 +4311,15 @@
                     const nz = dz / dist * overlap;
                     a.x -= nx; a.z -= nz;
                     b.x += nx; b.z += nz;
+                    // Re-apply wall collision to prevent pushing into walls
+                    if (gameMap !== 'hall') {
+                        const wa = a.big || a.king || a.knight || a.tank ? 0.7 : 0.4;
+                        const wb = b.big || b.king || b.knight || b.tank ? 0.7 : 0.4;
+                        const ca = collideWalls(a.x, a.z, wa);
+                        const cb = collideWalls(b.x, b.z, wb);
+                        a.x = ca.x; a.z = ca.z;
+                        b.x = cb.x; b.z = cb.z;
+                    }
                     a.mesh.position.x = a.x; a.mesh.position.z = a.z;
                     b.mesh.position.x = b.x; b.mesh.position.z = b.z;
                 }
