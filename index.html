@@ -3459,7 +3459,7 @@
         const riseY = opts.riseY !== undefined ? opts.riseY : -0.8;
         mesh.position.set(origin.x, rising ? riseY : baseY, origin.z);
         return createZombieData(origin.x, origin.z, mesh, Object.assign({
-            speed: opts.speed !== undefined ? opts.speed : 0.5,
+            speed: opts.speed !== undefined ? opts.speed : 0.05,
             hp,
             maxHp: opts.maxHp !== undefined ? opts.maxHp : hp,
             rising,
@@ -3501,7 +3501,7 @@
         const riseY = opts.riseY !== undefined ? opts.riseY : -2.0;
         mesh.position.set(origin.x, rising ? riseY : baseY, origin.z);
         return createZombieData(origin.x, origin.z, mesh, Object.assign({
-            speed: opts.speed !== undefined ? opts.speed : 0.5,
+            speed: opts.speed !== undefined ? opts.speed : 0.05,
             hp,
             maxHp: opts.maxHp !== undefined ? opts.maxHp : hp,
             rising,
@@ -3523,7 +3523,7 @@
         const riseY = opts.riseY !== undefined ? opts.riseY : -2.8;
         mesh.position.set(origin.x, rising ? riseY : baseY, origin.z);
         return createZombieData(origin.x, origin.z, mesh, Object.assign({
-            speed: opts.speed !== undefined ? opts.speed : 0.4,
+            speed: opts.speed !== undefined ? opts.speed : 0.04,
             hp,
             maxHp: opts.maxHp !== undefined ? opts.maxHp : hp,
             rising,
