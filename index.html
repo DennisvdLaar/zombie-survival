@@ -351,6 +351,21 @@
             <div class="label">Sniper</div>
             <div class="cost">🪙 350</div>
         </div>
+        <div class="shop-item" id="buy-rocket" title="Rocket Launcher - 750 coins (AoE splash damage!)">
+            <div class="gun-display">
+                <svg class="gun-svg" viewBox="0 0 60 24" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="5" y="8" width="10" height="8" rx="1" fill="#2a3a2a"/>
+                    <rect x="13" y="6" width="35" height="12" rx="4" fill="#333"/>
+                    <rect x="46" y="5" width="8" height="14" rx="2" fill="#2a3a2a"/>
+                    <circle cx="50" cy="12" r="4" fill="#1a1a1a"/>
+                    <circle cx="50" cy="12" r="2.5" fill="#111"/>
+                    <rect x="20" y="4" width="6" height="2" rx="1" fill="#444"/>
+                    <circle cx="23" cy="4" r="1.2" fill="#ff2200"/>
+                </svg>
+            </div>
+            <div class="label">Rocket</div>
+            <div class="cost">🪙 750</div>
+        </div>
     </div>
     <div id="turret-upgrade-panel">
         <button id="turret-upgrade-close" class="panel-close" type="button">×</button>
@@ -2164,6 +2179,59 @@
         return group;
     }
 
+    function createRocketTurretMesh(x, z) {
+        const group = new THREE.Group();
+        const metalOlive = new THREE.MeshStandardMaterial({ color: 0x3a4a2a, metalness: 0.7, roughness: 0.4 });
+        const metalDark = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.8, roughness: 0.3 });
+        const metalMid = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.7, roughness: 0.4 });
+        const redTip = new THREE.MeshBasicMaterial({ color: 0xff2200 });
+
+        // Tripod
+        const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.07, 8), metalMid);
+        hub.position.y = 0.9; group.add(hub);
+        for (let i = 0; i < 3; i++) {
+            const angle = (i / 3) * Math.PI * 2 - Math.PI / 6;
+            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 1.0, 5), metalMid);
+            leg.position.set(Math.sin(angle) * 0.25, 0.45, Math.cos(angle) * 0.25);
+            leg.rotation.x = Math.cos(angle) * 0.3;
+            leg.rotation.z = Math.sin(angle) * 0.3;
+            group.add(leg);
+            const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 0.03, 6), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 1 }));
+            foot.position.set(Math.sin(angle) * 0.45, 0.02, Math.cos(angle) * 0.45);
+            group.add(foot);
+        }
+
+        // Launcher tube
+        const gunGroup = new THREE.Group();
+        gunGroup.position.set(0, 0.95, -0.1);
+        const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.9, 10), metalOlive);
+        tube.rotation.x = -Math.PI / 2;
+        tube.position.set(0, 0, 0.3); gunGroup.add(tube);
+        // Front end
+        const front = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.07, 0.12, 10), metalDark);
+        front.rotation.x = -Math.PI / 2;
+        front.position.set(0, 0, 0.78); gunGroup.add(front);
+        // Red tip / warhead indicator
+        const tip = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.1, 8), redTip);
+        tip.rotation.x = -Math.PI / 2;
+        tip.position.set(0, 0, 0.88); gunGroup.add(tip);
+        // Sight
+        const sight = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.06, 0.08), metalMid);
+        sight.position.set(0, 0.09, 0.1); gunGroup.add(sight);
+        const sightDot = new THREE.Mesh(new THREE.SphereGeometry(0.015, 6, 6), redTip);
+        sightDot.position.set(0, 0.13, 0.1); gunGroup.add(sightDot);
+        // Rear grip
+        const grip = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.12, 0.1), metalOlive);
+        grip.position.set(0, -0.08, -0.15); gunGroup.add(grip);
+
+        group.add(gunGroup);
+        group.userData.gunGroup = gunGroup;
+        group.scale.set(1.7, 1.7, 1.7);
+        group.position.set(x, 0, z);
+        scene.add(group);
+        return group;
+    }
+
     function createSniperTurretMesh(x, z) {
         const group = new THREE.Group();
         const metalDark = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.8, roughness: 0.3 });
@@ -2254,7 +2322,8 @@
     const turretStats = {
         shotgun:    { cost: 150, fireRate: 45, range: 4, damage: 20, type: 'shotgun', pellets: 6 },
         machinegun: { cost: 200, fireRate: 6, range: 7, damage: 5, type: 'machinegun' },
-        sniper:     { cost: 350, fireRate: 120, range: 12, damage: 100, type: 'sniper' }
+        sniper:     { cost: 350, fireRate: 120, range: 12, damage: 100, type: 'sniper' },
+        rocket:     { cost: 750, fireRate: 180, range: 9, damage: 80, type: 'rocket', aoeRadius: 3 }
     };
     // Upgrade definitions: [cost, stats to merge]
     const mgUpgrades = [
@@ -2271,6 +2340,10 @@
         { cost: 600, damage: 200, fireRate: 90, label: 'Sniper Lv3: 200 dmg, 1.5s reload' },
         { cost: 1200, damage: 250, fireRate: 60, label: 'Sniper Lv4: 250 dmg, 1s reload' }
     ];
+    const rocketUpgrades = [
+        { cost: 500, damage: 120, fireRate: 150, label: 'Rocket Lv2: 120 dmg, 2.5s reload' },
+        { cost: 1000, damage: 180, fireRate: 120, label: 'Rocket Lv3: 180 dmg, 2s reload' }
+    ];
     const turretUpgradePanel = document.getElementById('turret-upgrade-panel');
     const turretUpgradeName = document.getElementById('turret-upgrade-name');
     const turretUpgradeReload = document.getElementById('turret-upgrade-reload');
@@ -2284,12 +2357,14 @@
     function getTurretTypeLabel(type) {
         if (type === 'machinegun') return '🔫 Machine Gun';
         if (type === 'sniper') return '🎯 Sniper';
+        if (type === 'rocket') return '🚀 Rocket';
         return '💥 Shotgun';
     }
 
     function getTurretUpgrades(type) {
         if (type === 'machinegun') return mgUpgrades;
         if (type === 'sniper') return sniperUpgrades;
+        if (type === 'rocket') return rocketUpgrades;
         return shotgunUpgrades;
     }
 
@@ -2307,7 +2382,7 @@
         if (turret.type === 'shotgun') {
             if (upgrade.pellets !== undefined) summary.push(`${upgrade.pellets} pellets`);
             if (upgrade.burstCount !== undefined) summary.push(`x${upgrade.burstCount} burst`);
-        } else if (turret.type === 'sniper') {
+        } else if (turret.type === 'sniper' || turret.type === 'rocket') {
             summary.push(`${formatReloadSeconds(upgrade.fireRate !== undefined ? upgrade.fireRate : turret.fireRate)} reload`);
         } else {
             summary.push(formatBulletsPerSecond(upgrade.fireRate !== undefined ? upgrade.fireRate : turret.fireRate));
@@ -2385,7 +2460,7 @@
         placementRotation = 0;
         document.getElementById('blueprint-legend').style.display = 'block';
         // Create ghost (blueprint) turret
-        placementGhost = (type === 'machinegun') ? createMGTurretMesh(0, 0) : (type === 'sniper') ? createSniperTurretMesh(0, 0) : createTurretMesh(0, 0);
+        placementGhost = (type === 'machinegun') ? createMGTurretMesh(0, 0) : (type === 'sniper') ? createSniperTurretMesh(0, 0) : (type === 'rocket') ? createRocketTurretMesh(0, 0) : createTurretMesh(0, 0);
         // Make it semi-transparent blue
         placementGhost.traverse(child => {
             if (child.isMesh) {
@@ -2491,9 +2566,9 @@
 
     function createTurretRecord(type, x, z, facing) {
         const stats = turretStats[type];
-        const mesh = (type === 'machinegun') ? createMGTurretMesh(x, z) : (type === 'sniper') ? createSniperTurretMesh(x, z) : createTurretMesh(x, z);
+        const mesh = (type === 'machinegun') ? createMGTurretMesh(x, z) : (type === 'sniper') ? createSniperTurretMesh(x, z) : (type === 'rocket') ? createRocketTurretMesh(x, z) : createTurretMesh(x, z);
         mesh.rotation.y = facing;
-        return { x, z, mesh, fireTimer: 0, fireRate: stats.fireRate, range: stats.range, damage: stats.damage, facing, type: stats.type, recoilTimer: 0, hp: 100, upgradeLevel: 0, pellets: stats.pellets || 1, burstCount: 1, burstFired: 0, burstCooldown: 0 };
+        return { x, z, mesh, fireTimer: 0, fireRate: stats.fireRate, range: stats.range, damage: stats.damage, facing, type: stats.type, recoilTimer: 0, hp: 100, upgradeLevel: 0, pellets: stats.pellets || 1, burstCount: 1, burstFired: 0, burstCooldown: 0, aoeRadius: stats.aoeRadius || 0 };
     }
 
     function applyTurretUpgradeStats(turret, upgrade) {
@@ -4380,29 +4455,52 @@
                 }
                 if (closestTarget) {
                     turret.fireTimer = 0;
-                    if (turret.type === 'machinegun' || turret.type === 'sniper') {
+                    if (turret.type === 'machinegun' || turret.type === 'sniper' || turret.type === 'rocket') {
                         const aimAngle = Math.atan2(closestTarget.x - turret.x, closestTarget.z - turret.z);
                         turret.mesh.rotation.y = aimAngle;
                         turret.facing = aimAngle;
                     }
                     const gun = turret.mesh.userData.gunGroup;
                     if (gun) {
-                        gun.position.z = turret.type === 'machinegun' ? -0.4 : turret.type === 'sniper' ? -0.3 : -0.35;
-                        turret.recoilTimer = turret.type === 'machinegun' ? 8 : turret.type === 'sniper' ? 15 : 10;
+                        gun.position.z = turret.type === 'rocket' ? -0.5 : turret.type === 'machinegun' ? -0.4 : turret.type === 'sniper' ? -0.3 : -0.35;
+                        turret.recoilTimer = turret.type === 'rocket' ? 20 : turret.type === 'machinegun' ? 8 : turret.type === 'sniper' ? 15 : 10;
                     }
-                    triggerShake(turret.type === 'sniper' ? 0.25 : turret.type === 'machinegun' ? 0.12 : 0.15, turret.type === 'sniper' ? 8 : turret.type === 'machinegun' ? 4 : 6);
-                    if (turret.type === 'sniper') playSniperSound(); else if (turret.type === 'machinegun') playMGSound(); else playShotgunSound();
+                    triggerShake(turret.type === 'rocket' ? 0.2 : turret.type === 'sniper' ? 0.25 : turret.type === 'machinegun' ? 0.12 : 0.15, turret.type === 'rocket' ? 6 : turret.type === 'sniper' ? 8 : turret.type === 'machinegun' ? 4 : 6);
+                    if (turret.type === 'rocket') playSniperSound(); else if (turret.type === 'sniper') playSniperSound(); else if (turret.type === 'machinegun') playMGSound(); else playShotgunSound();
                     const halfCone = Math.PI / 6;
-                    const currentFacing = turret.type === 'machinegun' ? turret.mesh.rotation.y : turret.facing;
-                    const flashAngle = currentFacing + (Math.random() - 0.5) * (turret.type === 'machinegun' ? 0.15 : turret.type === 'sniper' ? 0.02 : halfCone * 2);
-                    const flash = new THREE.Mesh(flashGeom, turret.type === 'machinegun' ? mgFlashMat : turret.type === 'sniper' ? new THREE.MeshBasicMaterial({ color: 0x00ccff }) : flashMat);
+                    const currentFacing = turret.type === 'machinegun' || turret.type === 'rocket' ? turret.mesh.rotation.y : turret.facing;
+                    const flashAngle = currentFacing + (Math.random() - 0.5) * (turret.type === 'rocket' ? 0.02 : turret.type === 'machinegun' ? 0.15 : turret.type === 'sniper' ? 0.02 : halfCone * 2);
+                    const flash = new THREE.Mesh(flashGeom, turret.type === 'rocket' ? new THREE.MeshBasicMaterial({ color: 0xff4400 }) : turret.type === 'machinegun' ? mgFlashMat : turret.type === 'sniper' ? new THREE.MeshBasicMaterial({ color: 0x00ccff }) : flashMat);
                     const muzzleX = turret.x + Math.sin(flashAngle) * 0.9;
                     const muzzleZ = turret.z + Math.cos(flashAngle) * 0.9;
                     flash.position.set(muzzleX, 0.85, muzzleZ);
                     scene.add(flash);
                     setTimeout(() => scene.remove(flash), turret.type === 'machinegun' ? 40 : 80);
 
-                    if (turret.type === 'sniper') {
+                    if (turret.type === 'rocket') {
+                        const rocketMesh = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.06, 0.04, 0.4, 6),
+                            new THREE.MeshBasicMaterial({ color: 0xff4400 })
+                        );
+                        rocketMesh.rotation.x = Math.PI / 2;
+                        rocketMesh.position.set(muzzleX, 0.85, muzzleZ);
+                        scene.add(rocketMesh);
+                        activePellets.push({
+                            mesh: rocketMesh,
+                            vx: Math.sin(currentFacing) * 0.3,
+                            vz: Math.cos(currentFacing) * 0.3,
+                            vy: 0,
+                            life: 60,
+                            damage: turret.damage,
+                            hasHit: false,
+                            startX: muzzleX,
+                            startZ: muzzleZ,
+                            maxRange: turret.range,
+                            rocket: true,
+                            aoeRadius: turret.aoeRadius || 3,
+                            splashDamage: Math.floor(turret.damage * 0.5)
+                        });
+                    } else if (turret.type === 'sniper') {
                         const tracerPoints = [
                             new THREE.Vector3(muzzleX, 1.2, muzzleZ),
                             new THREE.Vector3(closestTarget.x, 0.5, closestTarget.z)
@@ -4486,11 +4584,25 @@
                 const dx = p.mesh.position.x - p.startX;
                 const dz = p.mesh.position.z - p.startZ;
                 if (dx * dx + dz * dz > p.maxRange * p.maxRange) {
+                    if (p.rocket) {
+                        // Rocket explodes at max range
+                        const ex = p.mesh.position.x, ez = p.mesh.position.z;
+                        zombies.forEach(z => {
+                            const d = dist2D(ex, ez, z.x, z.z);
+                            if (d < p.aoeRadius) z.hp -= p.splashDamage;
+                        });
+                        const boom = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.9 }));
+                        boom.position.set(ex, 0.5, ez); scene.add(boom);
+                        let bs = 1;
+                        const bi = setInterval(() => { bs += 0.3; boom.scale.setScalar(bs); boom.material.opacity -= 0.08; if (boom.material.opacity <= 0) { clearInterval(bi); scene.remove(boom); } }, 30);
+                        triggerShake(0.3, 10);
+                    }
                     p.hasHit = true;
                     p.life = 0;
                 }
             }
-            if (!p.hasHit) {
+            // Rockets skip wall collision (fly over walls)
+            if (!p.hasHit && !p.rocket) {
                 const px = p.mesh.position.x, pz = p.mesh.position.z;
                 for (const seg of wallSegments) {
                     if (seg.x1 === seg.x2) {
@@ -4515,7 +4627,22 @@
                     const dx = p.mesh.position.x - z.x;
                     const dz = p.mesh.position.z - z.z;
                     if (dx * dx + dz * dz < 0.16) {
-                        z.hp -= p.damage;
+                        if (p.rocket) {
+                            // AoE explosion on zombie hit
+                            const ex = p.mesh.position.x, ez = p.mesh.position.z;
+                            zombies.forEach(zz => {
+                                const d = dist2D(ex, ez, zz.x, zz.z);
+                                if (d < 0.5) zz.hp -= p.damage;
+                                else if (d < p.aoeRadius) zz.hp -= p.splashDamage;
+                            });
+                            const boom = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.9 }));
+                            boom.position.set(ex, 0.5, ez); scene.add(boom);
+                            let bs = 1;
+                            const bi = setInterval(() => { bs += 0.3; boom.scale.setScalar(bs); boom.material.opacity -= 0.08; if (boom.material.opacity <= 0) { clearInterval(bi); scene.remove(boom); } }, 30);
+                            triggerShake(0.3, 10);
+                        } else {
+                            z.hp -= p.damage;
+                        }
                         p.hasHit = true;
                         p.life = 0;
                         break;
@@ -4658,6 +4785,9 @@
         const btn3 = document.getElementById('buy-sniper');
         if (coins >= 350) btn3.classList.remove('locked');
         else btn3.classList.add('locked');
+        const btn4 = document.getElementById('buy-rocket');
+        if (coins >= 750) btn4.classList.remove('locked');
+        else btn4.classList.add('locked');
         if (gameMode === 'attack') {
             document.getElementById('spawn-normal').classList.toggle('locked', !game.running || game.betweenWaves || game.waitingForBegin || brains < attackZombieCosts.normal);
             document.getElementById('spawn-crawler').classList.toggle('locked', !game.running || game.betweenWaves || game.waitingForBegin || brains < attackZombieCosts.crawler);
@@ -4814,6 +4944,9 @@
     });
     document.getElementById('buy-sniper').addEventListener('click', () => {
         if (game.running) startPlacement('sniper');
+    });
+    document.getElementById('buy-rocket').addEventListener('click', () => {
+        if (game.running) startPlacement('rocket');
     });
     document.getElementById('spawn-normal').addEventListener('click', () => attackSpawnZombie('normal'));
     document.getElementById('spawn-crawler').addEventListener('click', () => attackSpawnZombie('crawler'));
