@@ -289,6 +289,7 @@
     </div>
     <div id="hud">
         <div>Wave <span class="val" id="wave">1</span></div>
+        <div>Towers <span class="val" id="tower-count">0</span></div>
         <div>Zombies <span class="val" id="zombie-count">0</span></div>
         <div>Generator <span class="hp-val" id="gen-hp">100</span>%</div>
         <div id="coins-display">🪙 <span class="val" id="coins">0</span></div>
@@ -5045,6 +5046,7 @@
 
     function updateHUD() {
         document.getElementById('wave').textContent = game.wave;
+        document.getElementById('tower-count').textContent = turrets.length;
         document.getElementById('zombie-count').textContent = zombies.length;
         document.getElementById('gen-hp').textContent = generator.hp;
         document.getElementById('coins').textContent = coins;
