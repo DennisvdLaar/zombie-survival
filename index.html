@@ -1843,19 +1843,19 @@
         9: { bigZombies: 3, zombies: 20 },
         10: { commander: true },
         11: { zombies: 30, crawlers: 10, armored: 4 },
-        12: { stealthZombies: 10, crawlers: 15 },
-        13: { armored: 8, zombies: 10 },
+        12: { stealthZombies: 10, crawlers: 15, healers: 1 },
+        13: { armored: 8, zombies: 10, healers: 2 },
         14: { bigZombies: 4, crawlers: 20 },
-        15: { smallNecromancers: 2, zombies: 15 },
-        16: { zombies: 40, crawlers: 15, armored: 6, bigZombies: 2 },
+        15: { smallNecromancers: 2, zombies: 15, healers: 2 },
+        16: { zombies: 40, crawlers: 15, armored: 6, bigZombies: 2, healers: 2 },
         17: { crawlers: 40 },
-        18: { armored: 12, bigZombies: 3 },
-        19: { stealthZombies: 15, armored: 10 },
+        18: { armored: 12, bigZombies: 3, healers: 3 },
+        19: { stealthZombies: 15, armored: 10, healers: 2 },
         20: { commander: true, zombies: 30, armored: 5 },
-        21: { zombies: 80, crawlers: 10 },
-        22: { armored: 10, bigZombies: 5, stealthZombies: 10 },
-        23: { zombies: 50, crawlers: 25, armored: 8, bigZombies: 4 },
-        24: { smallNecromancers: 2, armored: 15, crawlers: 30 },
+        21: { zombies: 80, crawlers: 10, healers: 3 },
+        22: { armored: 10, bigZombies: 5, stealthZombies: 10, healers: 3 },
+        23: { zombies: 50, crawlers: 25, armored: 8, bigZombies: 4, healers: 4 },
+        24: { smallNecromancers: 2, armored: 15, crawlers: 30, healers: 4 },
         25: { finalWave: true }
     };
 
@@ -3101,7 +3101,7 @@
             }
         }
         if (hovered) {
-            const maxHp = hovered.maxHp || (hovered.tank ? 800 : hovered.big ? 290 : hovered.fast ? 60 : 100);
+            const maxHp = hovered.maxHp || (hovered.tank ? 800 : hovered.big ? 290 : hovered.healer ? 120 : hovered.armored ? 200 : hovered.fast ? 60 : 100);
             const pct = Math.max(0, hovered.hp / maxHp) * 100;
             const fill = document.getElementById('zombie-hp-fill');
             fill.style.width = pct + '%';
@@ -3116,6 +3116,8 @@
             else if (hovered.big) name = '💀 Big';
             else if (hovered.fast) name = '⚡ Crawler';
             else if (hovered.stealth) name = '👻 Stealth';
+            else if (hovered.healer) name = '💚 Healer';
+            else if (hovered.armored) name = '🛡 Armored';
             document.getElementById('zombie-hp-name').textContent = name + ' ' + Math.round(hovered.hp) + '/' + Math.round(maxHp);
             tooltip.style.display = 'block';
             tooltip.style.left = (e.clientX + 12) + 'px';
@@ -3510,6 +3512,85 @@
         group.userData.animPhase = Math.random() * Math.PI * 2;
         group.userData.walkSpeed = 2.5 + Math.random() * 1.5;
         group.userData.isArmored = true;
+
+        scene.add(group);
+        return group;
+    }
+
+    // Healer zombie (glowing green, heals nearby zombies)
+    function createHealerZombieMesh() {
+        const group = new THREE.Group();
+
+        const skinMat = new THREE.MeshStandardMaterial({ color: 0x3a7a3a, roughness: 0.7, emissive: 0x0a2a0a });
+        const darkSkin = new THREE.MeshStandardMaterial({ color: 0x2a6a2a, roughness: 0.8 });
+        const robeMat = new THREE.MeshStandardMaterial({ color: 0x1a3a1a, roughness: 0.8, emissive: 0x0a1a0a });
+        const glowMat = new THREE.MeshBasicMaterial({ color: 0x44ff44, transparent: true, opacity: 0.6 });
+        const shoeMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.95 });
+
+        // === LEGS ===
+        const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.7, 0.12), robeMat);
+        leg1.position.set(0.08, 0.35, 0); group.add(leg1);
+        const leg2 = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.7, 0.12), robeMat);
+        leg2.position.set(-0.08, 0.35, 0); group.add(leg2);
+        const shoe1 = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.05, 0.16), shoeMat);
+        shoe1.position.set(0.08, 0.03, 0.02); group.add(shoe1);
+        const shoe2 = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.05, 0.16), shoeMat);
+        shoe2.position.set(-0.08, 0.03, 0.02); group.add(shoe2);
+
+        // === TORSO (robed) ===
+        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.5, 0.2), robeMat);
+        torso.position.set(0, 1.0, 0); group.add(torso);
+        // Glowing cross symbol on chest
+        const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.18, 0.02), glowMat);
+        crossV.position.set(0, 1.05, 0.12); group.add(crossV);
+        const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, 0.02), glowMat);
+        crossH.position.set(0, 1.08, 0.12); group.add(crossH);
+
+        // === NECK ===
+        const neck = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), skinMat);
+        neck.position.set(0, 1.3, 0); group.add(neck);
+
+        // === HEAD ===
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), skinMat);
+        head.position.set(0, 1.48, 0); group.add(head);
+        // Hood
+        const hood = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.16, 0.24), robeMat);
+        hood.position.set(0, 1.56, -0.02); group.add(hood);
+        // Glowing green eyes
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x00ff44 });
+        const eye1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.03, 0.02), eyeMat);
+        eye1.position.set(0.05, 1.5, 0.1); group.add(eye1);
+        const eye2 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.03, 0.02), eyeMat);
+        eye2.position.set(-0.05, 1.5, 0.1); group.add(eye2);
+        // Jaw
+        const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.05, 0.12), skinMat);
+        jaw.position.set(0, 1.36, 0.02); group.add(jaw);
+
+        // === ARMS (outstretched, casting pose) ===
+        const arm1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.1), robeMat);
+        arm1.position.set(0.26, 1.05, 0.1);
+        arm1.rotation.z = -0.4; arm1.rotation.x = -0.5; group.add(arm1);
+        const arm2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.1), robeMat);
+        arm2.position.set(-0.26, 1.05, 0.1);
+        arm2.rotation.z = 0.4; arm2.rotation.x = -0.5; group.add(arm2);
+        // Glowing hands
+        const hand1 = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.1, 0.05), glowMat);
+        hand1.position.set(0, -0.28, 0); arm1.add(hand1);
+        const hand2 = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.1, 0.05), glowMat);
+        hand2.position.set(0, -0.28, 0); arm2.add(hand2);
+
+        // Healing aura ring on ground
+        const auraGeom = new THREE.RingGeometry(0.8, 1.0, 16);
+        const auraMat = new THREE.MeshBasicMaterial({ color: 0x44ff44, transparent: true, opacity: 0.25, side: THREE.DoubleSide });
+        const aura = new THREE.Mesh(auraGeom, auraMat);
+        aura.rotation.x = -Math.PI / 2;
+        aura.position.y = 0.05;
+        group.add(aura);
+
+        group.userData.parts = { leg1, leg2, torso, head, jaw, arm1, arm2, hand1, hand2, aura };
+        group.userData.animPhase = Math.random() * Math.PI * 2;
+        group.userData.walkSpeed = 2 + Math.random() * 1;
+        group.userData.isHealer = true;
 
         scene.add(group);
         return group;
@@ -4157,6 +4238,29 @@
         }, opts));
     }
 
+    function spawnHealerZombie(options) {
+        const opts = options || {};
+        const origin = getSpawnOrigin(opts);
+        const mesh = createHealerZombieMesh();
+        const hp = opts.hp !== undefined ? opts.hp : 120;
+        const baseY = opts.baseY !== undefined ? opts.baseY : 0;
+        const rising = opts.rising !== undefined ? opts.rising : true;
+        const riseY = opts.riseY !== undefined ? opts.riseY : -1.8;
+        mesh.position.set(origin.x, rising ? riseY : baseY, origin.z);
+        return createZombieData(origin.x, origin.z, mesh, Object.assign({
+            speed: opts.speed !== undefined ? opts.speed : 0.045 + Math.random() * 0.01,
+            hp,
+            maxHp: opts.maxHp !== undefined ? opts.maxHp : hp,
+            rising,
+            riseY,
+            baseY,
+            healer: true,
+            healRadius: 3,
+            healAmount: 0.5, // HP per frame to nearby zombies
+            healTimer: 0
+        }, opts));
+    }
+
     function spawnStealthZombie(options) {
         const opts = options || {};
         const origin = getSpawnOrigin(opts);
@@ -4431,6 +4535,7 @@
         for (let i = 0; i < (def.crawlers || 0); i++) queue.push('crawler');
         for (let i = 0; i < (def.stealthZombies || 0); i++) queue.push('stealth');
         for (let i = 0; i < (def.armored || 0); i++) queue.push('armored');
+        for (let i = 0; i < (def.healers || 0); i++) queue.push('healer');
         for (let i = 0; i < (def.bigZombies || 0); i++) queue.push('big');
         for (let i = 0; i < (def.smallNecromancers || 0); i++) queue.push('smallNecro');
         game.spawnQueue = shuffleArray(queue);
@@ -4443,6 +4548,7 @@
         if (kind === 'crawler') spawnFastZombie();
         else if (kind === 'stealth') spawnStealthZombie();
         else if (kind === 'armored') spawnArmoredZombie();
+        else if (kind === 'healer') spawnHealerZombie();
         else if (kind === 'big') spawnBigZombie();
         else if (kind === 'smallNecro') spawnSmallNecromancer();
         else spawnZombie();
@@ -5346,6 +5452,24 @@
             if (p.life <= 0) {
                 scene.remove(p.mesh);
                 activePellets.splice(i, 1);
+            }
+        }
+
+        // Healer zombie logic: heal nearby zombies
+        for (const z of zombies) {
+            if (!z.healer || z.rising || z.hp <= 0) continue;
+            z.healTimer = (z.healTimer || 0) + 1;
+            // Pulse the aura
+            if (z.mesh.userData.parts && z.mesh.userData.parts.aura) {
+                z.mesh.userData.parts.aura.material.opacity = 0.15 + Math.sin(z.healTimer * 0.1) * 0.1;
+                z.mesh.userData.parts.aura.rotation.z += 0.02;
+            }
+            for (const other of zombies) {
+                if (other === z || other.rising || other.hp <= 0 || other.hp >= other.maxHp) continue;
+                const d = dist2D(z.x, z.z, other.x, other.z);
+                if (d < z.healRadius) {
+                    other.hp = Math.min(other.maxHp, other.hp + z.healAmount);
+                }
             }
         }
 
