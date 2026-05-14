@@ -131,6 +131,14 @@
             border: 1px solid #5bbb74; border-radius: 10px; color: #8cff95; font-size: 18px;
             background: rgba(22,54,28,0.75);
         }
+        #turret-sell-btn {
+            width: 100%; margin-top: 8px; padding: 10px 14px; border-radius: 10px;
+            border: 1px solid #cc4444; background: linear-gradient(180deg, #8b2020, #5a1515);
+            color: #fff; font-family: 'Impact', sans-serif; font-size: 16px; letter-spacing: 1px;
+            cursor: pointer; box-shadow: 0 0 12px rgba(255,50,50,0.15); display: flex;
+            justify-content: space-between; align-items: center;
+        }
+        #turret-sell-btn:hover { background: linear-gradient(180deg, #a82828, #6b1a1a); }
     </style>
 </head>
 <body>
@@ -434,6 +442,10 @@
             <span class="upgrade-cost" id="turret-upgrade-cost">🪙 300</span>
         </button>
         <div id="turret-upgrade-max">MAX LEVEL</div>
+        <button id="turret-sell-btn" type="button">
+            <span>🗑 SELL</span>
+            <span id="turret-sell-value">🪙 75</span>
+        </button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -2675,6 +2687,7 @@
         turretUpgradeDamage.textContent = turret.damage;
         turretUpgradeRange.textContent = turret.range;
         turretUpgradePanel.style.display = 'block';
+        document.getElementById('turret-sell-value').textContent = `🪙 ${getTurretSellValue(turret)}`;
         if (!nextUpgrade) {
             turretUpgradeAction.style.display = 'none';
             turretUpgradeMax.style.display = 'block';
@@ -2706,6 +2719,31 @@
         flashTurretUpgrade(turret);
         updateHUD();
         refreshTurretUpgradePanel();
+    }
+
+    function getTurretSellValue(turret) {
+        const baseCost = turretStats[turret.type].cost;
+        const upgrades = getTurretUpgrades(turret.type);
+        let totalInvested = baseCost;
+        for (let i = 0; i < turret.upgradeLevel; i++) {
+            totalInvested += upgrades[i].cost;
+        }
+        return Math.floor(totalInvested * 0.5);
+    }
+
+    function sellTurret(turret) {
+        if (!turret || !turrets.includes(turret)) return;
+        const refund = getTurretSellValue(turret);
+        coins += refund;
+        scene.remove(turret.mesh);
+        turrets.splice(turrets.indexOf(turret), 1);
+        hideTurretUpgradePanel();
+        updateHUD();
+    }
+
+    document.getElementById('turret-sell-btn').addEventListener('click', () => {
+        if (game.selectedTurret) sellTurret(game.selectedTurret);
+    });
     }
 
     function startPlacement(type) {
