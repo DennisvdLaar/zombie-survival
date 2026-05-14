@@ -52,12 +52,6 @@
         .shop-item .gun-svg {
             width: 60px; height: 24px;
         }
-        #coop-divider {
-            position: fixed; top: 0; left: 50%; transform: translateX(-50%);
-            width: 3px; height: 100%; z-index: 4; display: none;
-            background: linear-gradient(180deg, #ff4400, #ffaa00, #ff4400);
-            box-shadow: 0 0 10px #ff8800;
-        }
         #coins-display { color: #fc0; }
         #blueprint-legend {
             position: absolute; top: 50px; left: 10px;
@@ -158,11 +152,6 @@
                 <div style="font-size:48px; margin-bottom:12px;">⚔️</div>
                 <div style="font-size:22px; font-weight:bold; color:#f44; margin-bottom:8px;">ATTACK</div>
                 <div style="font-size:13px; color:#aaa; line-height:1.5;">Bestuur de zombies en vernietig de generator!</div>
-            </div>
-            <div id="mode-coop" class="mode-card" style="width:220px; padding:30px 20px; background:linear-gradient(180deg,#1a1a2a,#0a0a1a); border:3px solid #66f; border-radius:16px; cursor:pointer; text-align:center; transition:all 0.2s;">
-                <div style="font-size:48px; margin-bottom:12px;">👥</div>
-                <div style="font-size:22px; font-weight:bold; color:#66f; margin-bottom:8px;">CO-OP</div>
-                <div style="font-size:13px; color:#aaa; line-height:1.5;">Speel samen! Eén verdedigt, de ander valt aan. Splitscreen!</div>
             </div>
         </div>
     </div>
@@ -358,7 +347,6 @@
     </div>
     <div id="king-taunt" style="display:none; position:fixed; top:95px; left:50%; transform:translateX(-50%); z-index:11; padding:12px 26px; background:rgba(0,0,0,0.82); border:2px solid #d8a522; border-radius:12px; color:#ffd85a; font-family:'Impact',sans-serif; font-size:32px; letter-spacing:2px; text-shadow:0 0 14px #aa7700;"></div>
     <button id="begin-btn" style="display:none; position:fixed; top:15px; right:15px; z-index:10; padding:12px 28px; font-size:18px; font-weight:bold; font-family:'Impact',sans-serif; letter-spacing:2px; background:linear-gradient(180deg,#d44,#a22); color:#fff; border:2px solid #f66; border-radius:10px; cursor:pointer; text-shadow:0 0 6px #f00; box-shadow:0 0 15px rgba(255,50,50,0.5);">⚔️ LET'S BEGIN</button>
-    <div id="coop-divider"></div>
     <!-- Zombie hover healthbar -->
     <div id="zombie-hp-tooltip" style="display:none; position:fixed; pointer-events:none; z-index:20; text-align:center;">
         <div id="zombie-hp-name" style="font-family:'Impact',sans-serif; font-size:12px; color:#fff; text-shadow:0 0 4px #000; margin-bottom:2px;"></div>
@@ -660,76 +648,38 @@
     let lastMouse = { x: 0, y: 0 };
     const keysDown = {};
 
-    // === CO-OP: Second camera for attacker ===
-    const cameraP2 = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 100);
-    cameraP2.position.set(0, 18, 14);
-    cameraP2.lookAt(0, 0, 0);
-    let cameraAngleP2 = 0.4;
-    let cameraTiltP2 = 0.85;
-    let cameraDistanceP2 = 35;
-    let cameraTargetP2 = { x: 0, z: 0 };
-    let activeViewport = 'full'; // 'full', 'left', 'right'
-
-    function updateCameraFor(cam, tgt, ang, tlt, dst) {
-        cam.position.set(
-            tgt.x + Math.sin(ang) * Math.sin(tlt) * dst,
-            Math.cos(tlt) * dst,
-            tgt.z + Math.cos(ang) * Math.sin(tlt) * dst
-        );
-        cam.lookAt(tgt.x, 1, tgt.z);
+    function updateCamera() {
+        const x = cameraTarget.x + Math.sin(cameraAngle) * Math.sin(cameraTilt) * cameraDistance;
+        const y = Math.cos(cameraTilt) * cameraDistance;
+        const z = cameraTarget.z + Math.cos(cameraAngle) * Math.sin(cameraTilt) * cameraDistance;
+        camera.position.set(x, y, z);
+        camera.lookAt(cameraTarget.x, 1, cameraTarget.z);
     }
-    function updateCamera() { updateCameraFor(camera, cameraTarget, cameraAngle, cameraTilt, cameraDistance); }
-    function updateCameraP2() { updateCameraFor(cameraP2, cameraTargetP2, cameraAngleP2, cameraTiltP2, cameraDistanceP2); }
     updateCamera();
-    updateCameraP2();
 
     window.addEventListener('keydown', e => { keysDown[e.key.toLowerCase()] = true; });
     window.addEventListener('keyup', e => { keysDown[e.key.toLowerCase()] = false; });
 
     renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
-    renderer.domElement.addEventListener('mousedown', e => {
-        if (e.button === 2) {
-            isDragging = true;
-            lastMouse = {x:e.clientX, y:e.clientY};
-            if (gameMode === 'coop') activeViewport = (e.clientX < window.innerWidth / 2) ? 'left' : 'right';
-        }
-    });
+    renderer.domElement.addEventListener('mousedown', e => { if (e.button === 2) { isDragging = true; lastMouse = {x:e.clientX, y:e.clientY}; } });
     window.addEventListener('mouseup', e => { if (e.button === 2) isDragging = false; });
     window.addEventListener('mousemove', e => {
         if (!isDragging) return;
         const dx = e.clientX - lastMouse.x;
         const dy = e.clientY - lastMouse.y;
-        if (gameMode === 'coop' && activeViewport === 'right') {
-            cameraAngleP2 += dx * 0.008;
-            cameraTiltP2 = Math.max(0.3, Math.min(1.4, cameraTiltP2 + dy * 0.005));
-            updateCameraP2();
-        } else {
-            cameraAngle += dx * 0.008;
-            cameraTilt = Math.max(0.3, Math.min(1.4, cameraTilt + dy * 0.005));
-            updateCamera();
-        }
+        cameraAngle += dx * 0.008;
+        cameraTilt = Math.max(0.3, Math.min(1.4, cameraTilt + dy * 0.005));
         lastMouse = {x:e.clientX, y:e.clientY};
+        updateCamera();
     });
     renderer.domElement.addEventListener('wheel', e => {
-        if (gameMode === 'coop' && e.clientX >= window.innerWidth / 2) {
-            cameraDistanceP2 = Math.max(15, Math.min(50, cameraDistanceP2 + e.deltaY * 0.01));
-            updateCameraP2();
-        } else {
-            cameraDistance = Math.max(15, Math.min(50, cameraDistance + e.deltaY * 0.01));
-            updateCamera();
-        }
+        cameraDistance = Math.max(15, Math.min(50, cameraDistance + e.deltaY * 0.01));
+        updateCamera();
     });
     window.addEventListener('resize', () => {
-        const w = window.innerWidth, h = window.innerHeight;
-        if (gameMode === 'coop') {
-            camera.aspect = (w / 2) / h;
-            cameraP2.aspect = (w / 2) / h;
-            cameraP2.updateProjectionMatrix();
-        } else {
-            camera.aspect = w / h;
-        }
+        camera.aspect = window.innerWidth/window.innerHeight;
         camera.updateProjectionMatrix();
-        renderer.setSize(w, h);
+        renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
     // === LIGHTING ===
@@ -2761,8 +2711,6 @@
     function startPlacement(type) {
         const stats = turretStats[type];
         if (gameMode === 'attack' || coins < stats.cost || placementMode) return;
-        // In co-op, only allow placement from left viewport (defender)
-        if (gameMode === 'coop' && activeViewport === 'right') return;
         hideTurretUpgradePanel();
         placementMode = true;
         placementType = type;
@@ -2929,23 +2877,9 @@
 
     // Track mouse position on ground plane
     window.addEventListener('mousemove', e => {
-        if (gameMode === 'coop') {
-            const halfW = window.innerWidth / 2;
-            activeViewport = (e.clientX < halfW) ? 'left' : 'right';
-            if (activeViewport === 'right') {
-                mouseNDC.x = ((e.clientX - halfW) / halfW) * 2 - 1;
-                mouseNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
-                raycaster.setFromCamera(mouseNDC, cameraP2);
-            } else {
-                mouseNDC.x = (e.clientX / halfW) * 2 - 1;
-                mouseNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
-                raycaster.setFromCamera(mouseNDC, camera);
-            }
-        } else {
-            mouseNDC.x = (e.clientX / window.innerWidth) * 2 - 1;
-            mouseNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
-            raycaster.setFromCamera(mouseNDC, camera);
-        }
+        mouseNDC.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouseNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouseNDC, camera);
         const hit = new THREE.Vector3();
         if (raycaster.ray.intersectPlane(groundPlane, hit)) {
             mouseWorld.x = hit.x;
@@ -3002,19 +2936,11 @@
             }
         }
         if (e.key === 'Escape' || e.key === 'q') cancelPlacement();
-        // Co-op: number keys to spawn zombies (attacker)
-        if (gameMode === 'coop') {
-            if (e.key === '1') attackSpawnZombie('normal');
-            if (e.key === '2') attackSpawnZombie('crawler');
-            if (e.key === '3') attackSpawnZombie('big');
-        }
     });
 
     // Left click to place or inspect turret upgrades
     renderer.domElement.addEventListener('mousedown', e => {
         if (e.button !== 0) return;
-        // In co-op, only defender (left viewport) can place/inspect towers
-        if (gameMode === 'coop' && activeViewport === 'right') return;
         if (placementMode) {
             confirmPlacement();
             return;
@@ -3707,30 +3633,11 @@
             document.getElementById('attack-spawn-panel').style.display = 'flex';
             document.getElementById('shop-bar').style.display = 'none';
             document.getElementById('begin-btn').style.display = 'none';
-            document.getElementById('coop-divider').style.display = 'none';
-        } else if (gameMode === 'coop') {
-            document.getElementById('hud').style.display = 'flex';
-            document.getElementById('attack-hud').style.display = 'flex';
-            document.getElementById('attack-spawn-panel').style.display = 'flex';
-            document.getElementById('shop-bar').style.display = 'none';
-            document.getElementById('coop-divider').style.display = 'block';
-            // Set split-screen camera aspects
-            camera.aspect = (window.innerWidth / 2) / window.innerHeight;
-            camera.updateProjectionMatrix();
-            cameraP2.aspect = (window.innerWidth / 2) / window.innerHeight;
-            cameraP2.updateProjectionMatrix();
-            // Position HUDs for split screen
-            document.getElementById('hud').style.left = '25%';
-            document.getElementById('attack-hud').style.left = '75%';
-            document.getElementById('attack-spawn-panel').style.left = '75%';
         } else {
             document.getElementById('hud').style.display = 'flex';
             document.getElementById('attack-hud').style.display = 'none';
             document.getElementById('attack-spawn-panel').style.display = 'none';
             document.getElementById('shop-bar').style.display = 'none';
-            document.getElementById('coop-divider').style.display = 'none';
-            // Reset HUD position
-            document.getElementById('hud').style.left = '50%';
         }
         updateHUD();
     }
@@ -4246,9 +4153,7 @@
 
     function attackSpawnZombie(type) {
         const cost = attackZombieCosts[type];
-        if (brains < cost || !game.running || game.waitingForBegin || spawnHoles.length === 0) return;
-        // In attack mode, also block during betweenWaves; in co-op, allow spawning anytime
-        if (gameMode === 'attack' && game.betweenWaves) return;
+        if (brains < cost || !game.running || game.betweenWaves || game.waitingForBegin || spawnHoles.length === 0) return;
         brains -= cost;
         const hole = spawnHoles[0];
         const opts = { x: hole.x + (Math.random() - 0.5) * 2, z: hole.z + (Math.random() - 0.5) * 2 };
@@ -4402,19 +4307,9 @@
             game.waveDelay--;
             if (game.waveDelay <= 0) {
                 if (gameMode === 'attack') startAttackWave();
-                else {
-                    startWave();
-                    // In co-op, also give attacker brains each wave
-                    if (gameMode === 'coop') {
-                        brains += attackWaveBudgets[Math.min(game.wave - 1, attackWaveBudgets.length - 1)] || 0;
-                    }
-                }
+                else startWave();
             }
-            if (gameMode !== 'attack' && gameMode !== 'coop') {
-                updateHUD();
-                return;
-            }
-            if (gameMode === 'coop') {
+            if (gameMode !== 'attack') {
                 updateHUD();
                 return;
             }
@@ -5111,13 +5006,6 @@
                 game.wave++;
                 game.betweenWaves = true;
                 game.waveDelay = 120;
-            } else if (gameMode === 'coop') {
-                // Defender survived all 12 waves in co-op
-                game.running = false;
-                hideTurretUpgradePanel();
-                document.querySelector('#game-over h2').textContent = '🏠 DEFENDER WINS!';
-                document.getElementById('final-score').textContent = 'The generator survived all 12 waves! The defender wins!';
-                document.getElementById('game-over').style.display = 'flex';
             }
         }
         if (generator.hp <= 0) handleGeneratorDestroyed();
@@ -5157,13 +5045,6 @@
     function handleGeneratorDestroyed() {
         if (!game.running) return;
         if (gameMode === 'attack') attackVictory();
-        else if (gameMode === 'coop') {
-            game.running = false;
-            hideTurretUpgradePanel();
-            document.querySelector('#game-over h2').textContent = '⚔️ ATTACKER WINS!';
-            document.getElementById('final-score').textContent = `Generator destroyed on wave ${game.wave}! The attacker wins!`;
-            document.getElementById('game-over').style.display = 'flex';
-        }
         else gameOver();
     }
 
@@ -5173,19 +5054,17 @@
         document.getElementById('zombie-count').textContent = zombies.length;
         document.getElementById('gen-hp').textContent = generator.hp;
         document.getElementById('coins').textContent = coins;
-        if (gameMode === 'attack' || gameMode === 'coop') {
+        if (gameMode === 'attack') {
             document.getElementById('attack-brains').textContent = brains;
             document.getElementById('attack-gen-hp').textContent = Math.max(0, Math.round(generator.hp));
             document.getElementById('attack-wave').textContent = game.wave + '/' + attackTotalWaves;
             if (game.betweenWaves && !game.waitingForBegin) {
                 document.getElementById('attack-timer').textContent = 'NEXT';
-            } else if (gameMode === 'attack') {
+            } else {
                 const secs = Math.ceil(attackWaveTimer / 60);
                 const min = Math.floor(secs / 60);
                 const sec = secs % 60;
                 document.getElementById('attack-timer').textContent = min + ':' + String(sec).padStart(2, '0');
-            } else {
-                document.getElementById('attack-timer').textContent = '∞';
             }
         }
         const el = document.getElementById('gen-hp');
@@ -5246,11 +5125,10 @@
         const btn4 = document.getElementById('buy-rocket');
         if (coins >= 750) btn4.classList.remove('locked');
         else btn4.classList.add('locked');
-        if (gameMode === 'attack' || gameMode === 'coop') {
-            const coopBlock = gameMode === 'coop' ? (!game.running || game.waitingForBegin) : (!game.running || game.betweenWaves || game.waitingForBegin);
-            document.getElementById('spawn-normal').classList.toggle('locked', coopBlock || brains < attackZombieCosts.normal);
-            document.getElementById('spawn-crawler').classList.toggle('locked', coopBlock || brains < attackZombieCosts.crawler);
-            document.getElementById('spawn-big').classList.toggle('locked', coopBlock || brains < attackZombieCosts.big);
+        if (gameMode === 'attack') {
+            document.getElementById('spawn-normal').classList.toggle('locked', !game.running || game.betweenWaves || game.waitingForBegin || brains < attackZombieCosts.normal);
+            document.getElementById('spawn-crawler').classList.toggle('locked', !game.running || game.betweenWaves || game.waitingForBegin || brains < attackZombieCosts.crawler);
+            document.getElementById('spawn-big').classList.toggle('locked', !game.running || game.betweenWaves || game.waitingForBegin || brains < attackZombieCosts.big);
         }
         refreshTurretUpgradePanel();
     }
@@ -5272,7 +5150,7 @@
         if (timestamp - lastFrameTime < frameDuration) return;
         lastFrameTime = timestamp;
 
-        // WASD camera panning (P1 / defender)
+        // WASD camera panning
         const panSpeed = 0.3;
         const forward = { x: -Math.sin(cameraAngle), z: -Math.cos(cameraAngle) };
         const right = { x: Math.cos(cameraAngle), z: -Math.sin(cameraAngle) };
@@ -5282,46 +5160,16 @@
         if (keysDown['d']) { cameraTarget.x += right.x * panSpeed; cameraTarget.z += right.z * panSpeed; }
         if (keysDown['w'] || keysDown['a'] || keysDown['s'] || keysDown['d']) updateCamera();
 
-        // Arrow key camera panning (P2 / attacker) - only in co-op
-        if (gameMode === 'coop') {
-            const fwd2 = { x: -Math.sin(cameraAngleP2), z: -Math.cos(cameraAngleP2) };
-            const rgt2 = { x: Math.cos(cameraAngleP2), z: -Math.sin(cameraAngleP2) };
-            if (keysDown['arrowup']) { cameraTargetP2.x += fwd2.x * panSpeed; cameraTargetP2.z += fwd2.z * panSpeed; }
-            if (keysDown['arrowdown']) { cameraTargetP2.x -= fwd2.x * panSpeed; cameraTargetP2.z -= fwd2.z * panSpeed; }
-            if (keysDown['arrowleft']) { cameraTargetP2.x -= rgt2.x * panSpeed; cameraTargetP2.z -= rgt2.z * panSpeed; }
-            if (keysDown['arrowright']) { cameraTargetP2.x += rgt2.x * panSpeed; cameraTargetP2.z += rgt2.z * panSpeed; }
-            if (keysDown['arrowup'] || keysDown['arrowdown'] || keysDown['arrowleft'] || keysDown['arrowright']) updateCameraP2();
-        }
-
         update();
         // Screen shake effect
         if (shakeDuration > 0) {
             const s = shakeIntensity * (shakeDuration / 8);
             camera.position.x += (Math.random() - 0.5) * s;
             camera.position.y += (Math.random() - 0.5) * s;
-            if (gameMode === 'coop') {
-                cameraP2.position.x += (Math.random() - 0.5) * s;
-                cameraP2.position.y += (Math.random() - 0.5) * s;
-            }
             shakeDuration--;
-            if (shakeDuration <= 0) { updateCamera(); if (gameMode === 'coop') updateCameraP2(); }
+            if (shakeDuration <= 0) updateCamera();
         }
-
-        if (gameMode === 'coop') {
-            const w = window.innerWidth, h = window.innerHeight;
-            renderer.setScissorTest(true);
-            // Left viewport — defender (P1)
-            renderer.setViewport(0, 0, w / 2, h);
-            renderer.setScissor(0, 0, w / 2, h);
-            renderer.render(scene, camera);
-            // Right viewport — attacker (P2)
-            renderer.setViewport(w / 2, 0, w / 2, h);
-            renderer.setScissor(w / 2, 0, w / 2, h);
-            renderer.render(scene, cameraP2);
-            renderer.setScissorTest(false);
-        } else {
-            renderer.render(scene, camera);
-        }
+        renderer.render(scene, camera);
     }
 
     // Room center positions for generator placement
@@ -5395,14 +5243,6 @@
         document.getElementById('hard-room-select').style.display = 'none';
         document.getElementById('attack-hole-select').style.display = 'flex';
     });
-    document.getElementById('mode-coop').addEventListener('click', () => {
-        gameMode = 'coop';
-        document.getElementById('attack-hole-select').style.display = 'none';
-        document.getElementById('room-select').style.display = 'none';
-        document.getElementById('hard-room-select').style.display = 'none';
-        document.getElementById('mode-select').style.display = 'none';
-        document.getElementById('map-select').style.display = 'flex';
-    });
     document.querySelectorAll('.room-btn').forEach(btn => {
         btn.addEventListener('mouseover', () => {
             btn.setAttribute('fill', '#2a5a2a');
@@ -5419,17 +5259,9 @@
             document.getElementById('hard-room-select').style.display = 'none';
             resetGame();
             document.getElementById('shop-bar').style.display = 'flex';
-            if (gameMode === 'coop') {
-                // Position shop bar in left half for defender
-                document.getElementById('shop-bar').style.right = 'auto';
-                document.getElementById('shop-bar').style.left = 'calc(50% - 100px)';
-            } else {
-                document.getElementById('shop-bar').style.right = '10px';
-                document.getElementById('shop-bar').style.left = 'auto';
-            }
             document.getElementById('begin-btn').style.display = 'block';
             game.betweenWaves = false;
-            game.waitingForBegin = true;
+            game.waitingForBegin = true; // don't auto-start waves yet
         });
     });
     document.getElementById('begin-btn').addEventListener('click', () => {
@@ -5439,19 +5271,6 @@
         if (frontDoor.alive) {
             scene.remove(frontDoor.mesh);
             frontDoor.alive = false;
-        }
-        // In co-op, create a spawn hole for the attacker
-        if (gameMode === 'coop') {
-            const genPos = genGroup.position;
-            // Place spawn hole at front door position (entry point)
-            const holeX = 0, holeZ = genPos.z > 0 ? -10 : 10;
-            const holeMesh = spawnHoleMeshes[0];
-            if (holeMesh) {
-                holeMesh.position.set(holeX, 0.05, holeZ);
-                holeMesh.visible = true;
-                spawnHoles.push({ x: holeX, z: holeZ });
-            }
-            document.getElementById('shop-bar').style.display = 'flex';
         }
         // Start first wave
         game.waitingForBegin = false;
@@ -5469,14 +5288,6 @@
         document.getElementById('attack-spawn-panel').style.display = 'none';
         document.getElementById('shop-bar').style.display = 'none';
         document.getElementById('begin-btn').style.display = 'none';
-        document.getElementById('coop-divider').style.display = 'none';
-        // Reset HUD positions
-        document.getElementById('hud').style.left = '50%';
-        document.getElementById('attack-hud').style.left = '50%';
-        document.getElementById('attack-spawn-panel').style.left = '50%';
-        // Reset camera aspect
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
         document.getElementById('mode-select').style.display = 'flex';
     });
     document.getElementById('buy-turret').addEventListener('click', () => {
