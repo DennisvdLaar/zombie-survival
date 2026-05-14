@@ -96,6 +96,12 @@
             display: flex; justify-content: space-between; gap: 10px; color: #d5e8d5;
         }
         #turret-upgrade-panel .panel-stat-value { color: #fff; }
+        .target-btn {
+            background: rgba(30,60,30,0.8); border: 1px solid #3a5a3a; color: #ccc;
+            border-radius: 5px; padding: 4px 8px; cursor: pointer; font-size: 14px; transition: all 0.15s;
+        }
+        .target-btn:hover { background: rgba(50,90,50,0.9); border-color: #5a8a5a; }
+        .target-btn.active { background: rgba(40,100,40,0.9); border-color: #6aff6a; color: #fff; box-shadow: 0 0 6px rgba(100,255,100,0.3); }
         #attack-hud, #attack-spawn-panel { display: none; }
         .attack-spawn-btn {
             min-width: 110px; color: #eee; cursor: pointer; text-align: center; padding: 10px 15px;
@@ -452,6 +458,12 @@
             <span>🗑 SELL</span>
             <span id="turret-sell-value">🪙 75</span>
         </button>
+        <div id="turret-target-mode" style="margin-top:6px; display:flex; gap:4px; justify-content:center;">
+            <button class="target-btn active" data-mode="closest" title="Closest">📍</button>
+            <button class="target-btn" data-mode="first" title="First (furthest along)">🏁</button>
+            <button class="target-btn" data-mode="strongest" title="Strongest (most HP)">💪</button>
+            <button class="target-btn" data-mode="weakest" title="Weakest (least HP)">💔</button>
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -2710,6 +2722,9 @@
         if (!nextUpgrade) {
             turretUpgradeAction.style.display = 'none';
             turretUpgradeMax.style.display = 'block';
+            document.querySelectorAll('.target-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === turret.targetMode);
+            });
             return;
         }
         turretUpgradeAction.style.display = 'flex';
@@ -2717,6 +2732,10 @@
         turretUpgradeNext.textContent = getUpgradeSummary(turret, nextUpgrade);
         turretUpgradeCost.textContent = `🪙 ${nextUpgrade.cost}`;
         turretUpgradeAction.disabled = coins < nextUpgrade.cost;
+        // Update targeting mode buttons
+        document.querySelectorAll('.target-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === turret.targetMode);
+        });
     }
 
     function showTurretUpgradePanel(turret) {
@@ -2762,6 +2781,14 @@
 
     document.getElementById('turret-sell-btn').addEventListener('click', () => {
         if (game.selectedTurret) sellTurret(game.selectedTurret);
+    });
+    document.querySelectorAll('.target-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (!game.selectedTurret) return;
+            game.selectedTurret.targetMode = btn.dataset.mode;
+            document.querySelectorAll('.target-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
     });
     }
 
@@ -2993,7 +3020,7 @@
         const stats = turretStats[type];
         const mesh = (type === 'machinegun') ? createMGTurretMesh(x, z) : (type === 'sniper') ? createSniperTurretMesh(x, z) : (type === 'rocket') ? createRocketTurretMesh(x, z) : createTurretMesh(x, z);
         mesh.rotation.y = facing;
-        return { x, z, mesh, fireTimer: 0, fireRate: stats.fireRate, range: stats.range, damage: stats.damage, facing, type: stats.type, recoilTimer: 0, hp: 100, upgradeLevel: 0, pellets: stats.pellets || 1, burstCount: 1, burstFired: 0, burstCooldown: 0, aoeRadius: stats.aoeRadius || 0 };
+        return { x, z, mesh, fireTimer: 0, fireRate: stats.fireRate, range: stats.range, damage: stats.damage, facing, type: stats.type, recoilTimer: 0, hp: 100, upgradeLevel: 0, pellets: stats.pellets || 1, burstCount: 1, burstFired: 0, burstCooldown: 0, aoeRadius: stats.aoeRadius || 0, targetMode: 'closest' };
     }
 
     function applyTurretUpgradeStats(turret, upgrade) {
@@ -5095,6 +5122,7 @@
                 }
                 let closestHiddenDist = Infinity;
                 let closestHidden = null;
+                let bestScore = null;
                 zombies.forEach(z => {
                     if (z.stealth && turret.type !== 'sniper') return;
                     const d = dist2D(turret.x, turret.z, z.x, z.z);
@@ -5103,8 +5131,14 @@
                             closestHiddenDist = d;
                             closestHidden = { x: z.x, z: z.z };
                         }
-                        if (d < closestDist) {
-                            closestDist = d;
+                        let score;
+                        const mode = turret.targetMode || 'closest';
+                        if (mode === 'first') score = z.pathIndex || 0;
+                        else if (mode === 'strongest') score = z.hp;
+                        else if (mode === 'weakest') score = -z.hp;
+                        else score = -d; // closest
+                        if (bestScore === null || score > bestScore) {
+                            bestScore = score;
                             closestTarget = { x: z.x, z: z.z };
                         }
                     }
