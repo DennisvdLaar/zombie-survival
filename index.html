@@ -4256,8 +4256,7 @@
             baseY,
             healer: true,
             healRadius: 3,
-            healAmount: 0.5, // HP per frame to nearby zombies
-            healTimer: 0
+            healCooldown: 0
         }, opts));
     }
 
@@ -5455,7 +5454,7 @@
             }
         }
 
-        // Healer zombie logic: heal nearby zombies
+        // Healer zombie logic: heal one zombie at a time, lowest HP, 100 HP burst
         for (const z of zombies) {
             if (!z.healer || z.rising || z.hp <= 0) continue;
             z.healTimer = (z.healTimer || 0) + 1;
@@ -5464,12 +5463,46 @@
                 z.mesh.userData.parts.aura.material.opacity = 0.15 + Math.sin(z.healTimer * 0.1) * 0.1;
                 z.mesh.userData.parts.aura.rotation.z += 0.02;
             }
+            // Cooldown: heal every 3 seconds (180 frames)
+            if (z.healCooldown > 0) { z.healCooldown--; continue; }
+            // Find lowest HP zombie in range (not self, not full HP)
+            let target = null, lowestHp = Infinity;
             for (const other of zombies) {
                 if (other === z || other.rising || other.hp <= 0 || other.hp >= other.maxHp) continue;
                 const d = dist2D(z.x, z.z, other.x, other.z);
-                if (d < z.healRadius) {
-                    other.hp = Math.min(other.maxHp, other.hp + z.healAmount);
+                if (d < z.healRadius && other.hp < lowestHp) {
+                    lowestHp = other.hp;
+                    target = other;
                 }
+            }
+            if (target) {
+                target.hp = Math.min(target.maxHp, target.hp + 100);
+                z.healCooldown = 180;
+                // Green heal beam from healer to target
+                const beamGeom = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(z.x, 1.2, z.z),
+                    new THREE.Vector3(target.x, 1.0, target.z)
+                ]);
+                const beam = new THREE.Line(beamGeom, new THREE.LineBasicMaterial({ color: 0x44ff44, transparent: true, opacity: 0.9, linewidth: 2 }));
+                scene.add(beam);
+                // Green burst on target
+                const burst = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), new THREE.MeshBasicMaterial({ color: 0x44ff44, transparent: true, opacity: 0.7 }));
+                burst.position.set(target.x, 1.0, target.z);
+                scene.add(burst);
+                // Animate and remove
+                let healAnim = 0;
+                const healInterval = setInterval(() => {
+                    healAnim++;
+                    beam.material.opacity -= 0.06;
+                    burst.material.opacity -= 0.05;
+                    burst.scale.setScalar(1 + healAnim * 0.15);
+                    if (healAnim >= 15) {
+                        clearInterval(healInterval);
+                        scene.remove(beam); scene.remove(burst);
+                        beamGeom.dispose(); beam.material.dispose();
+                        burst.geometry.dispose(); burst.material.dispose();
+                    }
+                }, 30);
             }
         }
 
