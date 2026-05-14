@@ -311,7 +311,7 @@
     <div id="attack-hud" style="display:none; position:absolute; top:10px; left:50%; transform:translateX(-50%); gap:25px; background:rgba(25,0,0,0.78); padding:8px 20px; border-radius:6px; color:#eee; font-size:14px; z-index:5; border:1px solid #a44;">
         <span>🧠 <span id="attack-brains" class="val" style="color:#f8b">0</span></span>
         <span>❤️ Generator: <span id="attack-gen-hp" class="hp-val">100</span></span>
-        <span>📊 Wave: <span id="attack-wave" class="val" style="color:#fa4;">1/12</span></span>
+        <span>📊 Wave: <span id="attack-wave" class="val" style="color:#fa4;">1/25</span></span>
         <span>⏱️ <span id="attack-timer" class="val" style="color:#ff0;">2:00</span></span>
     </div>
     <div id="attack-spawn-panel" style="display:none; position:absolute; bottom:20px; left:50%; transform:translateX(-50%); gap:15px; background:rgba(0,0,0,0.85); padding:12px 20px; border-radius:10px; border:2px solid #a44; z-index:5;">
@@ -1822,26 +1822,39 @@
     const waveDefinitions = {
         1: { zombies: 5 },
         2: { zombies: 8 },
-        3: { zombies: 10, crawlers: 1 },
-        4: { zombies: 15, crawlers: 3 },
+        3: { zombies: 10, crawlers: 2 },
+        4: { zombies: 15, crawlers: 4 },
         5: { necromancer: true, zombies: 10 },
-        6: { zombies: 35, crawlers: 10, armored: 2 },
-        7: { crawlers: 20 },
-        8: { stealthZombies: 5, armored: 3 },
-        9: { zombies: 60, armored: 5 },
+        6: { zombies: 20, crawlers: 5, armored: 2 },
+        7: { crawlers: 25 },
+        8: { stealthZombies: 6, armored: 3 },
+        9: { bigZombies: 3, zombies: 20 },
         10: { commander: true },
-        11: { smallNecromancers: 1, crawlers: 20, armored: 4 },
-        12: { finalWave: true }
+        11: { zombies: 30, crawlers: 10, armored: 4 },
+        12: { stealthZombies: 10, crawlers: 15 },
+        13: { armored: 8, zombies: 10 },
+        14: { bigZombies: 4, crawlers: 20 },
+        15: { smallNecromancers: 2, zombies: 15 },
+        16: { zombies: 40, crawlers: 15, armored: 6, bigZombies: 2 },
+        17: { crawlers: 40 },
+        18: { armored: 12, bigZombies: 3 },
+        19: { stealthZombies: 15, armored: 10 },
+        20: { commander: true, zombies: 30, armored: 5 },
+        21: { zombies: 80, crawlers: 10 },
+        22: { armored: 10, bigZombies: 5, stealthZombies: 10 },
+        23: { zombies: 50, crawlers: 25, armored: 8, bigZombies: 4 },
+        24: { smallNecromancers: 2, armored: 15, crawlers: 30 },
+        25: { finalWave: true }
     };
 
     let game = { running: false, wave: 1, zombiesRemaining: 0, spawnTimer: 0, spawnInterval: 30, betweenWaves: true, waveDelay: 0, waitingForBegin: false, spawnQueue: [], selectedTurret: null, finalWave: createFinalWaveState() };
     let gameMap = 'house';
     let gameMode = 'defense';
     let brains = 0;
-    const attackWaveBudgets = [100, 100, 150, 300, 450, 500, 1200, 1500, 1600, 1700, 1900, 2000];
+    const attackWaveBudgets = [100, 100, 150, 300, 450, 500, 1200, 1500, 1600, 1700, 1900, 2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800, 4000, 4500, 5000, 6000];
     const attackZombieCosts = { normal: 20, crawler: 60, big: 200 };
     let attackWaveTimer = 0;
-    const attackTotalWaves = 12;
+    const attackTotalWaves = 25;
     let attackSpawnedZombies = [];
     let generator = { hp: 100, maxHp: 100 };
     let necromancer = null;
@@ -4391,6 +4404,7 @@
         for (let i = 0; i < (def.crawlers || 0); i++) queue.push('crawler');
         for (let i = 0; i < (def.stealthZombies || 0); i++) queue.push('stealth');
         for (let i = 0; i < (def.armored || 0); i++) queue.push('armored');
+        for (let i = 0; i < (def.bigZombies || 0); i++) queue.push('big');
         for (let i = 0; i < (def.smallNecromancers || 0); i++) queue.push('smallNecro');
         game.spawnQueue = shuffleArray(queue);
         game.zombiesRemaining = game.spawnQueue.length;
@@ -4402,6 +4416,7 @@
         if (kind === 'crawler') spawnFastZombie();
         else if (kind === 'stealth') spawnStealthZombie();
         else if (kind === 'armored') spawnArmoredZombie();
+        else if (kind === 'big') spawnBigZombie();
         else if (kind === 'smallNecro') spawnSmallNecromancer();
         else spawnZombie();
     }
@@ -4416,6 +4431,9 @@
         if (def.necromancer) spawnNecromancerHorde();
         if (def.commander) {
             spawnCommanderZombie();
+            if (def.zombies || def.crawlers || def.armored || def.bigZombies || def.stealthZombies) {
+                buildWaveQueue(def);
+            }
             return;
         }
         if (def.finalWave) {
@@ -5308,7 +5326,7 @@
 
         const necAlive = gameMode !== 'attack' && necromancer && necromancer.alive;
         if (gameMode !== 'attack' && !game.waitingForBegin && !game.finalWave.active && (!game.spawnQueue || game.spawnQueue.length === 0) && zombies.length === 0 && !necAlive) {
-            if (game.wave < 12) {
+            if (game.wave < 25) {
                 game.wave++;
                 game.betweenWaves = true;
                 game.waveDelay = 120;
