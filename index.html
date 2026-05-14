@@ -427,6 +427,12 @@
             <div class="label">Rocket</div>
             <div class="cost">🪙 750</div>
         </div>
+        <div class="shop-item" id="buy-airstrike" title="Airstrike - 500 coins (massive AoE!)">
+            <div class="icon">✈️</div>
+            <div class="label">Airstrike</div>
+            <div class="cost">🪙 500</div>
+            <div id="airstrike-cooldown" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); border-radius:8px; display:none; align-items:center; justify-content:center; font-size:20px; color:#ff6644; font-weight:bold;"></div>
+        </div>
     </div>
     <div id="turret-upgrade-panel">
         <button id="turret-upgrade-close" class="panel-close" type="button">×</button>
@@ -2746,6 +2752,117 @@
     });
     }
 
+    // === AIRSTRIKE ABILITY ===
+    const AIRSTRIKE_COST = 500;
+    const AIRSTRIKE_DAMAGE = 300;
+    const AIRSTRIKE_SPLASH = 150;
+    const AIRSTRIKE_INNER_RADIUS = 2;
+    const AIRSTRIKE_OUTER_RADIUS = 5;
+    const AIRSTRIKE_COOLDOWN = 600; // 10 seconds at 60fps
+    let airstrikeMode = false;
+    let airstrikeCooldown = 0;
+    let airstrikeGhost = null;
+
+    function startAirstrike() {
+        if (gameMode === 'attack' || coins < AIRSTRIKE_COST || airstrikeMode || placementMode || airstrikeCooldown > 0) return;
+        hideTurretUpgradePanel();
+        airstrikeMode = true;
+        // Create targeting reticle
+        const group = new THREE.Group();
+        // Outer ring
+        const outerPts = [];
+        for (let i = 0; i <= 48; i++) {
+            const a = (i / 48) * Math.PI * 2;
+            outerPts.push(new THREE.Vector3(Math.cos(a) * AIRSTRIKE_OUTER_RADIUS, 0.06, Math.sin(a) * AIRSTRIKE_OUTER_RADIUS));
+        }
+        group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(outerPts), new THREE.LineBasicMaterial({ color: 0xff2200, transparent: true, opacity: 0.7 })));
+        // Inner ring
+        const innerPts = [];
+        for (let i = 0; i <= 48; i++) {
+            const a = (i / 48) * Math.PI * 2;
+            innerPts.push(new THREE.Vector3(Math.cos(a) * AIRSTRIKE_INNER_RADIUS, 0.06, Math.sin(a) * AIRSTRIKE_INNER_RADIUS));
+        }
+        group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(innerPts), new THREE.LineBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.8 })));
+        // Crosshair
+        const cross = [
+            new THREE.Vector3(-0.5, 0.06, 0), new THREE.Vector3(0.5, 0.06, 0),
+            new THREE.Vector3(0, 0.06, 0), // break
+            new THREE.Vector3(0, 0.06, -0.5), new THREE.Vector3(0, 0.06, 0.5)
+        ];
+        group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([cross[0], cross[1]]), new THREE.LineBasicMaterial({ color: 0xff4400 })));
+        group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([cross[3], cross[4]]), new THREE.LineBasicMaterial({ color: 0xff4400 })));
+        // Filled disc
+        const discGeo = new THREE.CircleGeometry(AIRSTRIKE_OUTER_RADIUS, 32);
+        discGeo.rotateX(-Math.PI / 2);
+        group.add(new THREE.Mesh(discGeo, new THREE.MeshBasicMaterial({ color: 0xff2200, transparent: true, opacity: 0.12 })));
+        scene.add(group);
+        airstrikeGhost = group;
+    }
+
+    function confirmAirstrike() {
+        if (!airstrikeMode || !airstrikeGhost) return;
+        const x = mouseWorld.x, z = mouseWorld.z;
+        coins -= AIRSTRIKE_COST;
+        airstrikeMode = false;
+        scene.remove(airstrikeGhost);
+        airstrikeGhost = null;
+        airstrikeCooldown = AIRSTRIKE_COOLDOWN;
+
+        // Damage zombies
+        zombies.forEach(zz => {
+            const d = dist2D(x, z, zz.x, zz.z);
+            if (d < AIRSTRIKE_INNER_RADIUS) zz.hp -= AIRSTRIKE_DAMAGE;
+            else if (d < AIRSTRIKE_OUTER_RADIUS) zz.hp -= AIRSTRIKE_SPLASH;
+        });
+
+        // Big explosion visual - multiple expanding rings
+        for (let i = 0; i < 3; i++) {
+            const boom = new THREE.Mesh(
+                new THREE.SphereGeometry(0.5, 12, 12),
+                new THREE.MeshBasicMaterial({ color: i === 0 ? 0xff6600 : i === 1 ? 0xff2200 : 0xffaa00, transparent: true, opacity: 0.9 })
+            );
+            boom.position.set(x, 0.5 + i * 0.3, z);
+            scene.add(boom);
+            let bs = 1;
+            const delay = i * 80;
+            setTimeout(() => {
+                const bi = setInterval(() => {
+                    bs += 0.5;
+                    boom.scale.setScalar(bs);
+                    boom.material.opacity -= 0.04;
+                    if (boom.material.opacity <= 0) { clearInterval(bi); scene.remove(boom); }
+                }, 25);
+            }, delay);
+        }
+
+        // Smoke column
+        const smoke = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.5, 2, 6, 8),
+            new THREE.MeshBasicMaterial({ color: 0x444444, transparent: true, opacity: 0.5 })
+        );
+        smoke.position.set(x, 3, z);
+        scene.add(smoke);
+        let smokeLife = 1;
+        const si = setInterval(() => {
+            smokeLife -= 0.015;
+            smoke.material.opacity = smokeLife * 0.5;
+            smoke.position.y += 0.05;
+            smoke.scale.x += 0.02;
+            smoke.scale.z += 0.02;
+            if (smokeLife <= 0) { clearInterval(si); scene.remove(smoke); }
+        }, 30);
+
+        triggerShake(0.8, 20);
+        updateHUD();
+    }
+
+    function cancelAirstrike() {
+        if (!airstrikeMode || !airstrikeGhost) return;
+        scene.remove(airstrikeGhost);
+        airstrikeGhost = null;
+        airstrikeMode = false;
+    }
+
     function startPlacement(type) {
         const stats = turretStats[type];
         if (gameMode === 'attack' || coins < stats.cost || placementMode) return;
@@ -2928,6 +3045,9 @@
             placementGhost.rotation.y = placementRotation;
             updateGhostColor();
         }
+        if (airstrikeMode && airstrikeGhost) {
+            airstrikeGhost.position.set(mouseWorld.x, 0, mouseWorld.z);
+        }
         // Zombie hover healthbar
         const tooltip = document.getElementById('zombie-hp-tooltip');
         let hovered = null, hoverDist = 1.5;
@@ -2973,12 +3093,16 @@
                 if (placementGhost) placementGhost.rotation.y = placementRotation;
             }
         }
-        if (e.key === 'Escape' || e.key === 'q') cancelPlacement();
+        if (e.key === 'Escape' || e.key === 'q') { cancelPlacement(); cancelAirstrike(); }
     });
 
     // Left click to place or inspect turret upgrades
     renderer.domElement.addEventListener('mousedown', e => {
         if (e.button !== 0) return;
+        if (airstrikeMode) {
+            confirmAirstrike();
+            return;
+        }
         if (placementMode) {
             confirmPlacement();
             return;
@@ -4341,6 +4465,9 @@
     function update() {
         if (!game.running) return;
 
+        // Airstrike cooldown tick
+        if (airstrikeCooldown > 0) airstrikeCooldown--;
+
         if (game.betweenWaves) {
             game.waveDelay--;
             if (game.waveDelay <= 0) {
@@ -5169,6 +5296,20 @@
             document.getElementById('spawn-big').classList.toggle('locked', !game.running || game.betweenWaves || game.waitingForBegin || brains < attackZombieCosts.big);
         }
         refreshTurretUpgradePanel();
+        // Airstrike button state
+        const airBtn = document.getElementById('buy-airstrike');
+        const airCD = document.getElementById('airstrike-cooldown');
+        if (airstrikeCooldown > 0) {
+            airBtn.classList.add('locked');
+            airCD.style.display = 'flex';
+            airCD.textContent = Math.ceil(airstrikeCooldown / 60) + 's';
+        } else if (coins < AIRSTRIKE_COST) {
+            airBtn.classList.add('locked');
+            airCD.style.display = 'none';
+        } else {
+            airBtn.classList.remove('locked');
+            airCD.style.display = 'none';
+        }
     }
 
     // === GAME LOOP (60 FPS) ===
@@ -5339,6 +5480,9 @@
     });
     document.getElementById('buy-rocket').addEventListener('click', () => {
         if (game.running) startPlacement('rocket');
+    });
+    document.getElementById('buy-airstrike').addEventListener('click', () => {
+        if (game.running) startAirstrike();
     });
     document.getElementById('spawn-normal').addEventListener('click', () => attackSpawnZombie('normal'));
     document.getElementById('spawn-crawler').addEventListener('click', () => attackSpawnZombie('crawler'));
