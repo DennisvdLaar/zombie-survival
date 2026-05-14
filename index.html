@@ -1860,17 +1860,17 @@
         11: { zombies: 30, crawlers: 10, armored: 4 },
         12: { stealthZombies: 10, crawlers: 15, healers: 1 },
         13: { armored: 8, zombies: 10, healers: 2 },
-        14: { bigZombies: 4, crawlers: 20 },
+        14: { bigZombies: 4, crawlers: 20, infectors: 1 },
         15: { smallNecromancers: 2, zombies: 15, healers: 2 },
-        16: { zombies: 40, crawlers: 15, armored: 6, bigZombies: 2, healers: 2 },
+        16: { zombies: 40, crawlers: 15, armored: 6, bigZombies: 2, healers: 2, infectors: 1 },
         17: { crawlers: 40 },
-        18: { armored: 12, bigZombies: 3, healers: 3 },
-        19: { stealthZombies: 15, armored: 10, healers: 2 },
+        18: { armored: 12, bigZombies: 3, healers: 3, infectors: 2 },
+        19: { stealthZombies: 15, armored: 10, healers: 2, infectors: 1 },
         20: { commander: true, zombies: 30, armored: 5 },
-        21: { zombies: 80, crawlers: 10, healers: 3 },
-        22: { armored: 10, bigZombies: 5, stealthZombies: 10, healers: 3 },
-        23: { zombies: 50, crawlers: 25, armored: 8, bigZombies: 4, healers: 4 },
-        24: { smallNecromancers: 2, armored: 15, crawlers: 30, healers: 4 },
+        21: { zombies: 80, crawlers: 10, healers: 3, infectors: 2 },
+        22: { armored: 10, bigZombies: 5, stealthZombies: 10, healers: 3, infectors: 2 },
+        23: { zombies: 50, crawlers: 25, armored: 8, bigZombies: 4, healers: 4, infectors: 3 },
+        24: { smallNecromancers: 2, armored: 15, crawlers: 30, healers: 4, infectors: 3 },
         25: { finalWave: true }
     };
 
@@ -3131,6 +3131,7 @@
             else if (hovered.fast) name = '⚡ Crawler';
             else if (hovered.stealth) name = '👻 Stealth';
             else if (hovered.healer) name = '💚 Healer';
+            else if (hovered.infector) name = '🦠 Infector';
             else if (hovered.armored) name = '🛡 Armored';
             document.getElementById('zombie-hp-name').textContent = name + ' ' + Math.round(hovered.hp) + '/' + Math.round(maxHp);
             tooltip.style.display = 'block';
@@ -3605,6 +3606,93 @@
         group.userData.animPhase = Math.random() * Math.PI * 2;
         group.userData.walkSpeed = 2 + Math.random() * 1;
         group.userData.isHealer = true;
+
+        scene.add(group);
+        return group;
+    }
+
+    // Infector zombie (purple/toxic, revives dead zombies nearby)
+    function createInfectorZombieMesh() {
+        const group = new THREE.Group();
+
+        const skinMat = new THREE.MeshStandardMaterial({ color: 0x6a3a7a, roughness: 0.7, emissive: 0x1a0a2a });
+        const darkSkin = new THREE.MeshStandardMaterial({ color: 0x5a2a6a, roughness: 0.8 });
+        const robeMat = new THREE.MeshStandardMaterial({ color: 0x2a1a3a, roughness: 0.8, emissive: 0x0a0515 });
+        const glowMat = new THREE.MeshBasicMaterial({ color: 0xaa44ff, transparent: true, opacity: 0.6 });
+        const shoeMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.95 });
+
+        // === LEGS ===
+        const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.7, 0.12), robeMat);
+        leg1.position.set(0.08, 0.35, 0); group.add(leg1);
+        const leg2 = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.7, 0.12), robeMat);
+        leg2.position.set(-0.08, 0.35, 0); group.add(leg2);
+        const shoe1 = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.05, 0.16), shoeMat);
+        shoe1.position.set(0.08, 0.03, 0.02); group.add(shoe1);
+        const shoe2 = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.05, 0.16), shoeMat);
+        shoe2.position.set(-0.08, 0.03, 0.02); group.add(shoe2);
+
+        // === TORSO ===
+        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.5, 0.2), robeMat);
+        torso.position.set(0, 1.0, 0); group.add(torso);
+        // Toxic symbol on chest (skull-like)
+        const skull1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.02), glowMat);
+        skull1.position.set(0, 1.1, 0.12); group.add(skull1);
+        const skull2 = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.04, 0.02), glowMat);
+        skull2.position.set(0, 1.02, 0.12); group.add(skull2);
+
+        // === NECK ===
+        const neck = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), skinMat);
+        neck.position.set(0, 1.3, 0); group.add(neck);
+
+        // === HEAD ===
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), skinMat);
+        head.position.set(0, 1.48, 0); group.add(head);
+        // Hood
+        const hood = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.16, 0.24), robeMat);
+        hood.position.set(0, 1.56, -0.02); group.add(hood);
+        // Purple glowing eyes
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0xcc44ff });
+        const eye1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.03, 0.02), eyeMat);
+        eye1.position.set(0.05, 1.5, 0.1); group.add(eye1);
+        const eye2 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.03, 0.02), eyeMat);
+        eye2.position.set(-0.05, 1.5, 0.1); group.add(eye2);
+        // Jaw
+        const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.05, 0.12), skinMat);
+        jaw.position.set(0, 1.36, 0.02); group.add(jaw);
+
+        // === ARMS (reaching down, casting) ===
+        const arm1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.1), robeMat);
+        arm1.position.set(0.26, 1.0, 0.08);
+        arm1.rotation.z = -0.3; arm1.rotation.x = -0.3; group.add(arm1);
+        const arm2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.1), robeMat);
+        arm2.position.set(-0.26, 1.0, 0.08);
+        arm2.rotation.z = 0.3; arm2.rotation.x = -0.3; group.add(arm2);
+        // Glowing hands
+        const hand1 = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.1, 0.05), glowMat);
+        hand1.position.set(0, -0.28, 0); arm1.add(hand1);
+        const hand2 = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.1, 0.05), glowMat);
+        hand2.position.set(0, -0.28, 0); arm2.add(hand2);
+
+        // Purple aura ring
+        const auraGeom = new THREE.RingGeometry(0.6, 0.8, 16);
+        const auraMat = new THREE.MeshBasicMaterial({ color: 0xaa44ff, transparent: true, opacity: 0.2, side: THREE.DoubleSide });
+        const aura = new THREE.Mesh(auraGeom, auraMat);
+        aura.rotation.x = -Math.PI / 2;
+        aura.position.y = 0.05;
+        group.add(aura);
+
+        // Floating toxic particles
+        for (let i = 0; i < 3; i++) {
+            const particle = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.04),
+                new THREE.MeshBasicMaterial({ color: 0xaa44ff, transparent: true, opacity: 0.5 }));
+            particle.position.set((Math.random() - 0.5) * 0.4, 0.8 + Math.random() * 0.8, (Math.random() - 0.5) * 0.4);
+            group.add(particle);
+        }
+
+        group.userData.parts = { leg1, leg2, torso, head, jaw, arm1, arm2, hand1, hand2, aura };
+        group.userData.animPhase = Math.random() * Math.PI * 2;
+        group.userData.walkSpeed = 2 + Math.random() * 1;
+        group.userData.isInfector = true;
 
         scene.add(group);
         return group;
@@ -4165,13 +4253,16 @@
         pos.project(camera);
         const x = (pos.x * 0.5 + 0.5) * window.innerWidth;
         const y = (-pos.y * 0.5 + 0.5) * window.innerHeight;
-        if (pos.z > 1) return; // behind camera
+        if (pos.z > 1) return;
         const el = document.createElement('div');
-        el.className = 'dmg-num' + (value >= 50 ? ' crit' : '') + (color === '#44ff44' ? ' heal' : '');
-        el.textContent = (color === '#44ff44' ? '+' : '-') + Math.round(value);
+        const isHeal = color === '#44ff44';
+        const isRevive = color === '#aa44ff';
+        el.className = 'dmg-num' + (value >= 50 ? ' crit' : '') + (isHeal ? ' heal' : '');
+        if (isRevive) el.textContent = '☠ REVIVE';
+        else el.textContent = (isHeal ? '+' : '-') + Math.round(value);
         el.style.left = (x + (Math.random() - 0.5) * 20) + 'px';
         el.style.top = y + 'px';
-        if (color !== '#44ff44') el.style.color = color;
+        if (!isHeal) el.style.color = color;
         dmgContainer.appendChild(el);
         setTimeout(() => el.remove(), 800);
     }
@@ -4289,6 +4380,28 @@
             healer: true,
             healRadius: 3,
             healCooldown: 0
+        }, opts));
+    }
+
+    function spawnInfectorZombie(options) {
+        const opts = options || {};
+        const origin = getSpawnOrigin(opts);
+        const mesh = createInfectorZombieMesh();
+        const hp = opts.hp !== undefined ? opts.hp : 100;
+        const baseY = opts.baseY !== undefined ? opts.baseY : 0;
+        const rising = opts.rising !== undefined ? opts.rising : true;
+        const riseY = opts.riseY !== undefined ? opts.riseY : -1.8;
+        mesh.position.set(origin.x, rising ? riseY : baseY, origin.z);
+        return createZombieData(origin.x, origin.z, mesh, Object.assign({
+            speed: opts.speed !== undefined ? opts.speed : 0.04 + Math.random() * 0.01,
+            hp,
+            maxHp: opts.maxHp !== undefined ? opts.maxHp : hp,
+            rising,
+            riseY,
+            baseY,
+            infector: true,
+            infectRadius: 3,
+            infectCooldown: 0
         }, opts));
     }
 
@@ -4567,6 +4680,7 @@
         for (let i = 0; i < (def.stealthZombies || 0); i++) queue.push('stealth');
         for (let i = 0; i < (def.armored || 0); i++) queue.push('armored');
         for (let i = 0; i < (def.healers || 0); i++) queue.push('healer');
+        for (let i = 0; i < (def.infectors || 0); i++) queue.push('infector');
         for (let i = 0; i < (def.bigZombies || 0); i++) queue.push('big');
         for (let i = 0; i < (def.smallNecromancers || 0); i++) queue.push('smallNecro');
         game.spawnQueue = shuffleArray(queue);
@@ -4580,6 +4694,7 @@
         else if (kind === 'stealth') spawnStealthZombie();
         else if (kind === 'armored') spawnArmoredZombie();
         else if (kind === 'healer') spawnHealerZombie();
+        else if (kind === 'infector') spawnInfectorZombie();
         else if (kind === 'big') spawnBigZombie();
         else if (kind === 'smallNecro') spawnSmallNecromancer();
         else spawnZombie();
@@ -5540,11 +5655,67 @@
             }
         }
 
+        // Infector zombie logic: pulse aura
+        for (const z of zombies) {
+            if (!z.infector || z.rising || z.hp <= 0) continue;
+            z.infectTimer = (z.infectTimer || 0) + 1;
+            if (z.mesh.userData.parts && z.mesh.userData.parts.aura) {
+                z.mesh.userData.parts.aura.material.opacity = 0.15 + Math.sin(z.infectTimer * 0.08) * 0.1;
+                z.mesh.userData.parts.aura.rotation.z -= 0.03;
+            }
+            if (z.infectCooldown > 0) z.infectCooldown--;
+        }
+
         for (let i = zombies.length - 1; i >= 0; i--) {
             if (zombies[i].hp <= 0) {
-                scene.remove(zombies[i].mesh);
-                zombieMeshes.splice(zombieMeshes.indexOf(zombies[i].mesh), 1);
-                if (gameMode !== 'attack') coins += zombies[i].coinReward || 25;
+                const dead = zombies[i];
+                // Check if an infector can revive this zombie
+                let revived = false;
+                if (!dead.infector) { // infectors can't revive other infectors
+                    for (const inf of zombies) {
+                        if (!inf.infector || inf.rising || inf.hp <= 0 || inf.infectCooldown > 0) continue;
+                        const d = dist2D(dead.x, dead.z, inf.x, inf.z);
+                        if (d < inf.infectRadius) {
+                            // Revive! Spawn a new zombie at the dead location
+                            inf.infectCooldown = 300; // 5 second cooldown
+                            const revZ = spawnZombie({ x: dead.x, z: dead.z, rising: false, hp: 50, maxHp: 50 });
+                            if (revZ) revZ.coinReward = 10; // less coins for revived zombies
+                            // Purple burst VFX
+                            const burst = new THREE.Mesh(
+                                new THREE.SphereGeometry(0.5, 8, 8),
+                                new THREE.MeshBasicMaterial({ color: 0xaa44ff, transparent: true, opacity: 0.8 })
+                            );
+                            burst.position.set(dead.x, 0.8, dead.z);
+                            scene.add(burst);
+                            // Beam from infector to revived
+                            const beamGeom = new THREE.BufferGeometry().setFromPoints([
+                                new THREE.Vector3(inf.x, 1.2, inf.z),
+                                new THREE.Vector3(dead.x, 0.8, dead.z)
+                            ]);
+                            const beam = new THREE.Line(beamGeom, new THREE.LineBasicMaterial({ color: 0xaa44ff, transparent: true, opacity: 0.9 }));
+                            scene.add(beam);
+                            let anim = 0;
+                            const interval = setInterval(() => {
+                                anim++;
+                                burst.material.opacity -= 0.06;
+                                burst.scale.setScalar(1 + anim * 0.2);
+                                beam.material.opacity -= 0.06;
+                                if (anim >= 15) {
+                                    clearInterval(interval);
+                                    scene.remove(burst); scene.remove(beam);
+                                    burst.geometry.dispose(); burst.material.dispose();
+                                    beamGeom.dispose(); beam.material.dispose();
+                                }
+                            }, 30);
+                            spawnDamageNumber(dead.x, 1.5, dead.z, 0, '#aa44ff');
+                            revived = true;
+                            break;
+                        }
+                    }
+                }
+                scene.remove(dead.mesh);
+                zombieMeshes.splice(zombieMeshes.indexOf(dead.mesh), 1);
+                if (!revived && gameMode !== 'attack') coins += dead.coinReward || 25;
                 zombies.splice(i, 1);
             }
         }
