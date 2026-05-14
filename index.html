@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>House Defense - Zombie Survival</title>
+    <title>House Defense - Zombie Survival TEST</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
@@ -277,7 +277,7 @@
             <text x="453" y="382" text-anchor="middle" fill="#aaa" font-size="12">🚿 Badkamer</text>
         </svg>
     </div>
-    <div id="game-over">    <div id="game-over">
+    <div id="game-over">
         <h2>💀 GENERATOR DESTROYED</h2>
         <p id="final-score"></p>
         <button id="restart-btn">TRY AGAIN</button>
@@ -633,6 +633,10 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.domElement.style.position = 'fixed';
+    renderer.domElement.style.top = '0';
+    renderer.domElement.style.left = '0';
+    renderer.domElement.style.zIndex = '-1';
     document.body.appendChild(renderer.domElement);
 
     // === CAMERA CONTROLS ===
