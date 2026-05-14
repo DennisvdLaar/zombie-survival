@@ -102,6 +102,18 @@
         }
         .target-btn:hover { background: rgba(50,90,50,0.9); border-color: #5a8a5a; }
         .target-btn.active { background: rgba(40,100,40,0.9); border-color: #6aff6a; color: #fff; box-shadow: 0 0 6px rgba(100,255,100,0.3); }
+        .dmg-num {
+            position: absolute; font-weight: bold; font-size: 16px; pointer-events: none;
+            text-shadow: 0 0 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,0.8);
+            animation: dmgFloat 0.8s ease-out forwards; white-space: nowrap;
+        }
+        .dmg-num.crit { font-size: 22px; }
+        .dmg-num.heal { color: #44ff44; }
+        @keyframes dmgFloat {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            70% { opacity: 0.8; }
+            100% { opacity: 0; transform: translateY(-40px) scale(0.7); }
+        }
         #attack-hud, #attack-spawn-panel { display: none; }
         .attack-spawn-btn {
             min-width: 110px; color: #eee; cursor: pointer; text-align: center; padding: 10px 15px;
@@ -465,6 +477,8 @@
             <button class="target-btn" data-mode="weakest" title="Weakest (least HP)">💔</button>
         </div>
     </div>
+
+    <div id="damage-numbers" style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:50; overflow:hidden;"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
@@ -4142,6 +4156,24 @@
     function damageZombie(z, amount) {
         const reduced = z.armor ? Math.max(1, amount - z.armor) : amount;
         z.hp -= reduced;
+        spawnDamageNumber(z.x, 1.8, z.z, reduced, '#ff4444');
+    }
+
+    const dmgContainer = document.getElementById('damage-numbers');
+    function spawnDamageNumber(wx, wy, wz, value, color) {
+        const pos = new THREE.Vector3(wx, wy, wz);
+        pos.project(camera);
+        const x = (pos.x * 0.5 + 0.5) * window.innerWidth;
+        const y = (-pos.y * 0.5 + 0.5) * window.innerHeight;
+        if (pos.z > 1) return; // behind camera
+        const el = document.createElement('div');
+        el.className = 'dmg-num' + (value >= 50 ? ' crit' : '') + (color === '#44ff44' ? ' heal' : '');
+        el.textContent = (color === '#44ff44' ? '+' : '-') + Math.round(value);
+        el.style.left = (x + (Math.random() - 0.5) * 20) + 'px';
+        el.style.top = y + 'px';
+        if (color !== '#44ff44') el.style.color = color;
+        dmgContainer.appendChild(el);
+        setTimeout(() => el.remove(), 800);
     }
 
     function getSpawnOrigin(options) {
@@ -5476,7 +5508,9 @@
                 }
             }
             if (target) {
+                const healed = Math.min(100, target.maxHp - target.hp);
                 target.hp = Math.min(target.maxHp, target.hp + 100);
+                if (healed > 0) spawnDamageNumber(target.x, 1.8, target.z, healed, '#44ff44');
                 z.healCooldown = 180;
                 // Green heal beam from healer to target
                 const beamGeom = new THREE.BufferGeometry().setFromPoints([
