@@ -446,6 +446,24 @@
             <div class="label">Rocket</div>
             <div class="cost">🪙 750</div>
         </div>
+        <div class="shop-item" id="buy-tesla" title="Tesla Coil - 400 coins (chain lightning!)">
+            <div class="gun-display">
+                <svg class="gun-svg" viewBox="0 0 60 30" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="22" y="24" width="16" height="4" rx="2" fill="#2a2a2a"/>
+                    <rect x="27" y="6" width="6" height="18" rx="1" fill="#2a2a2a"/>
+                    <ellipse cx="30" cy="20" rx="8" ry="1.5" fill="#b87333" opacity="0.8"/>
+                    <ellipse cx="30" cy="16" rx="7" ry="1.3" fill="#b87333" opacity="0.7"/>
+                    <ellipse cx="30" cy="12" rx="6" ry="1.2" fill="#b87333" opacity="0.6"/>
+                    <circle cx="30" cy="5" r="4" fill="#44aaff" opacity="0.9"/>
+                    <circle cx="30" cy="5" r="2.5" fill="#88ccff"/>
+                    <line x1="30" y1="5" x2="18" y2="12" stroke="#44aaff" stroke-width="1" opacity="0.6"/>
+                    <line x1="30" y1="5" x2="42" y2="10" stroke="#44aaff" stroke-width="1" opacity="0.6"/>
+                    <line x1="30" y1="5" x2="20" y2="2" stroke="#44aaff" stroke-width="1" opacity="0.4"/>
+                </svg>
+            </div>
+            <div class="label">Tesla</div>
+            <div class="cost">🪙 400</div>
+        </div>
         <div class="shop-item" id="buy-airstrike" title="Airstrike - 500 coins (massive AoE!)">
             <div class="icon">✈️</div>
             <div class="label">Airstrike</div>
@@ -2621,6 +2639,52 @@
         return group;
     }
 
+    function createTeslaTurretMesh(x, z) {
+        const group = new THREE.Group();
+        const metalDark = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, metalness: 0.9, roughness: 0.2 });
+        const metalCopper = new THREE.MeshStandardMaterial({ color: 0xb87333, metalness: 0.8, roughness: 0.3 });
+        const glowMat = new THREE.MeshBasicMaterial({ color: 0x44aaff });
+
+        // Base platform
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 0.15, 8), metalDark);
+        base.position.y = 0.075; group.add(base);
+
+        // Central pillar
+        const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 1.0, 8), metalDark);
+        pillar.position.y = 0.65; group.add(pillar);
+
+        // Copper coil rings
+        for (let i = 0; i < 6; i++) {
+            const coil = new THREE.Mesh(new THREE.TorusGeometry(0.15 - i * 0.012, 0.015, 6, 16), metalCopper);
+            coil.position.y = 0.35 + i * 0.12;
+            coil.rotation.x = Math.PI / 2;
+            group.add(coil);
+        }
+
+        // Top sphere (energy orb)
+        const orb = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), glowMat);
+        orb.position.y = 1.25; group.add(orb);
+
+        // Glow light
+        const glow = new THREE.PointLight(0x44aaff, 1.0, 4);
+        glow.position.y = 1.25; group.add(glow);
+
+        // Small capacitor spheres around base
+        for (let i = 0; i < 4; i++) {
+            const angle = (i / 4) * Math.PI * 2;
+            const cap = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), metalCopper);
+            cap.position.set(Math.sin(angle) * 0.3, 0.2, Math.cos(angle) * 0.3);
+            group.add(cap);
+        }
+
+        group.userData.orb = orb;
+        group.userData.glow = glow;
+        group.scale.set(1.5, 1.5, 1.5);
+        group.position.set(x, 0, z);
+        scene.add(group);
+        return group;
+    }
+
     // === PLACEMENT MODE ===
     let placementMode = false;
     let placementGhost = null;
@@ -2638,7 +2702,8 @@
         shotgun:    { cost: 150, fireRate: 45, range: 4, damage: 20, type: 'shotgun', pellets: 6 },
         machinegun: { cost: 200, fireRate: 6, range: 7, damage: 5, type: 'machinegun' },
         sniper:     { cost: 350, fireRate: 120, range: 12, damage: 100, type: 'sniper' },
-        rocket:     { cost: 750, fireRate: 180, range: 9, damage: 80, type: 'rocket', aoeRadius: 3 }
+        rocket:     { cost: 750, fireRate: 180, range: 9, damage: 80, type: 'rocket', aoeRadius: 3 },
+        tesla:      { cost: 400, fireRate: 90, range: 6, damage: 30, type: 'tesla', chainCount: 3 }
     };
     // Upgrade definitions: [cost, stats to merge]
     const mgUpgrades = [
@@ -2659,6 +2724,11 @@
         { cost: 500, damage: 120, fireRate: 150, label: 'Rocket Lv2: 120 dmg, 2.5s reload' },
         { cost: 1000, damage: 180, fireRate: 120, label: 'Rocket Lv3: 180 dmg, 2s reload' }
     ];
+    const teslaUpgrades = [
+        { cost: 300, damage: 45, chainCount: 4, label: 'Tesla Lv2: 45 dmg, 4 chains' },
+        { cost: 600, damage: 60, chainCount: 5, fireRate: 75, label: 'Tesla Lv3: 60 dmg, 5 chains' },
+        { cost: 1000, damage: 80, chainCount: 7, fireRate: 60, label: 'Tesla Lv4: 80 dmg, 7 chains' }
+    ];
     const turretUpgradePanel = document.getElementById('turret-upgrade-panel');
     const turretUpgradeName = document.getElementById('turret-upgrade-name');
     const turretUpgradeReload = document.getElementById('turret-upgrade-reload');
@@ -2673,6 +2743,7 @@
         if (type === 'machinegun') return '🔫 Machine Gun';
         if (type === 'sniper') return '🎯 Sniper';
         if (type === 'rocket') return '🚀 Rocket';
+        if (type === 'tesla') return '⚡ Tesla';
         return '💥 Shotgun';
     }
 
@@ -2680,6 +2751,7 @@
         if (type === 'machinegun') return mgUpgrades;
         if (type === 'sniper') return sniperUpgrades;
         if (type === 'rocket') return rocketUpgrades;
+        if (type === 'tesla') return teslaUpgrades;
         return shotgunUpgrades;
     }
 
@@ -2697,6 +2769,9 @@
         if (turret.type === 'shotgun') {
             if (upgrade.pellets !== undefined) summary.push(`${upgrade.pellets} pellets`);
             if (upgrade.burstCount !== undefined) summary.push(`x${upgrade.burstCount} burst`);
+        } else if (turret.type === 'tesla') {
+            if (upgrade.chainCount !== undefined) summary.push(`${upgrade.chainCount} chains`);
+            summary.push(`${formatReloadSeconds(upgrade.fireRate !== undefined ? upgrade.fireRate : turret.fireRate)} reload`);
         } else if (turret.type === 'sniper' || turret.type === 'rocket') {
             summary.push(`${formatReloadSeconds(upgrade.fireRate !== undefined ? upgrade.fireRate : turret.fireRate)} reload`);
         } else {
@@ -2769,6 +2844,7 @@
         if (upgrade.fireRate !== undefined) turret.fireRate = upgrade.fireRate;
         if (upgrade.pellets !== undefined) turret.pellets = upgrade.pellets;
         if (upgrade.burstCount !== undefined) turret.burstCount = upgrade.burstCount;
+        if (upgrade.chainCount !== undefined) turret.chainCount = upgrade.chainCount;
         flashTurretUpgrade(turret);
         updateHUD();
         refreshTurretUpgradePanel();
@@ -3032,9 +3108,9 @@
 
     function createTurretRecord(type, x, z, facing) {
         const stats = turretStats[type];
-        const mesh = (type === 'machinegun') ? createMGTurretMesh(x, z) : (type === 'sniper') ? createSniperTurretMesh(x, z) : (type === 'rocket') ? createRocketTurretMesh(x, z) : createTurretMesh(x, z);
+        const mesh = (type === 'machinegun') ? createMGTurretMesh(x, z) : (type === 'sniper') ? createSniperTurretMesh(x, z) : (type === 'rocket') ? createRocketTurretMesh(x, z) : (type === 'tesla') ? createTeslaTurretMesh(x, z) : createTurretMesh(x, z);
         mesh.rotation.y = facing;
-        return { x, z, mesh, fireTimer: 0, fireRate: stats.fireRate, range: stats.range, damage: stats.damage, facing, type: stats.type, recoilTimer: 0, hp: 100, upgradeLevel: 0, pellets: stats.pellets || 1, burstCount: 1, burstFired: 0, burstCooldown: 0, aoeRadius: stats.aoeRadius || 0, targetMode: 'closest' };
+        return { x, z, mesh, fireTimer: 0, fireRate: stats.fireRate, range: stats.range, damage: stats.damage, facing, type: stats.type, recoilTimer: 0, hp: 100, upgradeLevel: 0, pellets: stats.pellets || 1, burstCount: 1, burstFired: 0, burstCooldown: 0, aoeRadius: stats.aoeRadius || 0, targetMode: 'closest', chainCount: stats.chainCount || 0 };
     }
 
     function applyTurretUpgradeStats(turret, upgrade) {
@@ -5401,7 +5477,92 @@
                 }
                 if (closestTarget) {
                     turret.fireTimer = 0;
-                    if (turret.type === 'machinegun' || turret.type === 'sniper' || turret.type === 'rocket') {
+                    if (turret.type === 'tesla') {
+                        // Tesla chain lightning - instant hit, no projectiles
+                        const aimAngle = Math.atan2(closestTarget.x - turret.x, closestTarget.z - turret.z);
+                        turret.mesh.rotation.y = aimAngle;
+                        turret.facing = aimAngle;
+
+                        // Pulse the orb
+                        const orb = turret.mesh.userData.orb;
+                        const glow = turret.mesh.userData.glow;
+                        if (orb) { orb.scale.setScalar(1.8); setTimeout(() => { if (orb) orb.scale.setScalar(1); }, 200); }
+                        if (glow) { glow.intensity = 3; setTimeout(() => { if (glow) glow.intensity = 1; }, 200); }
+
+                        // Find primary target zombie
+                        const chainTargets = [];
+                        let bestZ = null, bestD = Infinity;
+                        for (const z of zombies) {
+                            if (z.stealth) continue;
+                            const d = dist2D(closestTarget.x, closestTarget.z, z.x, z.z);
+                            if (d < 0.8 && d < bestD) { bestD = d; bestZ = z; }
+                        }
+                        if (bestZ) {
+                            chainTargets.push(bestZ);
+                            damageZombie(bestZ, turret.damage);
+                            // Chain to nearby zombies
+                            const chainRange = 3;
+                            const maxChains = turret.chainCount || 3;
+                            let lastTarget = bestZ;
+                            for (let c = 1; c < maxChains; c++) {
+                                let nextZ = null, nextD = Infinity;
+                                for (const z of zombies) {
+                                    if (z.stealth || chainTargets.includes(z)) continue;
+                                    const d = dist2D(lastTarget.x, lastTarget.z, z.x, z.z);
+                                    if (d < chainRange && d < nextD) { nextD = d; nextZ = z; }
+                                }
+                                if (!nextZ) break;
+                                chainTargets.push(nextZ);
+                                damageZombie(nextZ, turret.damage);
+                                lastTarget = nextZ;
+                            }
+                        }
+
+                        // Draw chain lightning VFX
+                        let prevX = turret.x, prevY = 1.5 * 1.5, prevZ = turret.z; // orb world pos (scaled)
+                        const lightningLines = [];
+                        for (const ct of chainTargets) {
+                            const points = [];
+                            points.push(new THREE.Vector3(prevX, prevY, prevZ));
+                            // Add jagged midpoints
+                            const segments = 4;
+                            for (let s = 1; s < segments; s++) {
+                                const t = s / segments;
+                                points.push(new THREE.Vector3(
+                                    prevX + (ct.x - prevX) * t + (Math.random() - 0.5) * 0.4,
+                                    prevY + (0.6 - prevY) * t + (Math.random() - 0.5) * 0.3,
+                                    prevZ + (ct.z - prevZ) * t + (Math.random() - 0.5) * 0.4
+                                ));
+                            }
+                            points.push(new THREE.Vector3(ct.x, 0.6, ct.z));
+                            const lineGeom = new THREE.BufferGeometry().setFromPoints(points);
+                            const lineMat = new THREE.LineBasicMaterial({ color: 0x44aaff, transparent: true, opacity: 1.0, linewidth: 2 });
+                            const line = new THREE.Line(lineGeom, lineMat);
+                            scene.add(line);
+                            lightningLines.push({ line, mat: lineMat });
+                            // Spark flash at hit point
+                            const spark = new THREE.Mesh(new THREE.SphereGeometry(0.15, 6, 6), new THREE.MeshBasicMaterial({ color: 0x88ccff, transparent: true, opacity: 0.9 }));
+                            spark.position.set(ct.x, 0.6, ct.z);
+                            scene.add(spark);
+                            setTimeout(() => scene.remove(spark), 120);
+                            prevX = ct.x; prevY = 0.6; prevZ = ct.z;
+                        }
+                        // Fade out lightning
+                        let fadeStep = 0;
+                        const fadeInterval = setInterval(() => {
+                            fadeStep++;
+                            for (const ll of lightningLines) {
+                                ll.mat.opacity -= 0.15;
+                                if (ll.mat.opacity <= 0) { scene.remove(ll.line); ll.line.geometry.dispose(); }
+                            }
+                            if (fadeStep >= 7) {
+                                clearInterval(fadeInterval);
+                                for (const ll of lightningLines) { scene.remove(ll.line); ll.line.geometry.dispose(); }
+                            }
+                        }, 30);
+
+                        triggerShake(0.1, 4);
+                    } else if (turret.type === 'machinegun' || turret.type === 'sniper' || turret.type === 'rocket') {
                         const aimAngle = Math.atan2(closestTarget.x - turret.x, closestTarget.z - turret.z);
                         turret.mesh.rotation.y = aimAngle;
                         turret.facing = aimAngle;
@@ -5845,6 +6006,9 @@
         const btn4 = document.getElementById('buy-rocket');
         if (coins >= 750) btn4.classList.remove('locked');
         else btn4.classList.add('locked');
+        const btn5 = document.getElementById('buy-tesla');
+        if (coins >= 400) btn5.classList.remove('locked');
+        else btn5.classList.add('locked');
         if (gameMode === 'attack') {
             document.getElementById('spawn-normal').classList.toggle('locked', !game.running || game.betweenWaves || game.waitingForBegin || brains < attackZombieCosts.normal);
             document.getElementById('spawn-crawler').classList.toggle('locked', !game.running || game.betweenWaves || game.waitingForBegin || brains < attackZombieCosts.crawler);
@@ -6047,6 +6211,9 @@
     });
     document.getElementById('buy-rocket').addEventListener('click', () => {
         if (game.running) startPlacement('rocket');
+    });
+    document.getElementById('buy-tesla').addEventListener('click', () => {
+        if (game.running) startPlacement('tesla');
     });
     document.getElementById('buy-airstrike').addEventListener('click', () => {
         if (game.running) startAirstrike();
