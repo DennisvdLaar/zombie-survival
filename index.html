@@ -5290,7 +5290,14 @@
             if (keysDown['arrowdown']) { cameraTargetP2.x -= fwd2.x * panSpeed; cameraTargetP2.z -= fwd2.z * panSpeed; }
             if (keysDown['arrowleft']) { cameraTargetP2.x -= rgt2.x * panSpeed; cameraTargetP2.z -= rgt2.z * panSpeed; }
             if (keysDown['arrowright']) { cameraTargetP2.x += rgt2.x * panSpeed; cameraTargetP2.z += rgt2.z * panSpeed; }
-            if (keysDown['arrowup'] || keysDown['arrowdown'] || keysDown['arrowleft'] || keysDown['arrowright']) updateCameraP2();
+            // P2 rotate: Z/X keys
+            if (keysDown['z']) cameraAngleP2 -= 0.03;
+            if (keysDown['x']) cameraAngleP2 += 0.03;
+            // P2 zoom: -/= keys
+            if (keysDown['-']) cameraDistanceP2 = Math.min(50, cameraDistanceP2 + 0.3);
+            if (keysDown['=']) cameraDistanceP2 = Math.max(15, cameraDistanceP2 - 0.3);
+            if (keysDown['arrowup'] || keysDown['arrowdown'] || keysDown['arrowleft'] || keysDown['arrowright'] ||
+                keysDown['z'] || keysDown['x'] || keysDown['-'] || keysDown['=']) updateCameraP2();
         }
 
         update();
