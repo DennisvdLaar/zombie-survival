@@ -2074,13 +2074,14 @@
             mesh, x: sx, z: sz,
             hp: 150 + bossNum * 75,
             maxHp: 150 + bossNum * 75,
-            speed: 0.05,
+            speed: 0.03,
             spawnTimer: 0,
             spawnInterval: 10 * 60,
             spawnCount: 3 + (bossNum - 1) * 3,
             alive: true,
             bobPhase: Math.random() * Math.PI * 2,
-            path: null, pathIndex: 0, pathTimer: 0
+            path: null, pathIndex: 0, pathTimer: 0,
+            casting: false, castTimer: 0, castDuration: 90
         };
     }
 
@@ -2094,14 +2095,15 @@
             mesh, x: sx, z: sz,
             hp: 350 + (bossNum - 1) * 100,
             maxHp: 350 + (bossNum - 1) * 100,
-            speed: 0.05,
+            speed: 0.03,
             spawnTimer: 0,
             spawnInterval: 3 * 60,
             spawnCount: 4,
             alive: true,
             bobPhase: Math.random() * Math.PI * 2,
             path: null, pathIndex: 0, pathTimer: 0,
-            ritual: true, ritualTimer: 0, ritualDuration: 5 * 60
+            ritual: true, ritualTimer: 0, ritualDuration: 5 * 60,
+            casting: false, castTimer: 0, castDuration: 90
         };
         // Show NECROMANCER warning
         const overlay = document.getElementById('swarm-overlay');
@@ -2213,6 +2215,8 @@
         const activePathFn = gameMap === 'hard' ? getHardPath : getPath;
         const activeWaypoints = gameMap === 'hard' ? hardNavWaypoints : navWaypoints;
 
+        // Don't move while casting
+        if (!n.casting) {
         if (!nInside) {
             const angle = Math.atan2(0 - n.x, (HD/2 - 0.5) - n.z);
             n.x += Math.sin(angle) * n.speed;
@@ -2251,33 +2255,83 @@
                 }
             }
         }
+        } // end !n.casting
 
         n.x += Math.sin(n.bobPhase * 0.3) * 0.003;
         n.mesh.position.set(n.x, n.mesh.position.y, n.z);
 
-        // Spawn zombies periodically
+        // Spawn zombies periodically — with casting animation
         n.spawnTimer++;
-        if (n.spawnTimer >= n.spawnInterval) {
-            n.spawnTimer = 0;
-            // Pulse the orb
+        if (n.casting) {
+            n.castTimer++;
+            const progress = n.castTimer / n.castDuration;
             const orb = n.mesh.userData.parts.orb;
             const orbLight = n.mesh.userData.parts.orbLight;
-            if (orb) orb.scale.setScalar(2);
-            if (orbLight) orbLight.intensity = 3;
-            setTimeout(() => {
+            const robe = n.mesh.userData.parts.robe;
+            // Arms rise up during cast
+            const handL = n.mesh.userData.parts.handL;
+            const handR = n.mesh.userData.parts.handR;
+            if (handL) handL.position.y = 1.1 + progress * 0.8;
+            if (handR) handR.position.y = 1.1 + progress * 0.8;
+            // Orb grows and pulses
+            if (orb) orb.scale.setScalar(1 + progress * 2 + Math.sin(n.castTimer * 0.3) * 0.3);
+            if (orbLight) orbLight.intensity = 1.5 + progress * 4;
+            // Robe glows purple
+            if (robe) {
+                robe.material.emissive.set(0x440066);
+                robe.material.emissiveIntensity = progress * 0.8;
+            }
+            // Necromancer rises slightly
+            n.mesh.position.y = 0.5 + Math.sin(n.bobPhase) * 0.15 + progress * 0.6;
+            // Bone fragments orbit faster
+            n.mesh.children.forEach(child => {
+                if (child.userData.orbitAngle !== undefined) {
+                    child.userData.orbitAngle += 0.04 + progress * 0.08;
+                    const a = child.userData.orbitAngle;
+                    const radius = 0.6 + Math.sin(n.castTimer * 0.1) * 0.3;
+                    child.position.x = Math.cos(a) * radius;
+                    child.position.z = Math.sin(a) * radius;
+                    child.position.y = 2.2 + progress * 0.5;
+                }
+            });
+
+            if (n.castTimer >= n.castDuration) {
+                // Cast complete — spawn the zombies!
+                n.casting = false;
+                n.castTimer = 0;
+                // Reset visual state
+                if (handL) handL.position.y = 1.1;
+                if (handR) handR.position.y = 1.1;
                 if (orb) orb.scale.setScalar(1);
                 if (orbLight) orbLight.intensity = 1;
-            }, 300);
-            // Spawn zombies near necromancer with rise animation (20 HP minions)
-            for (let i = 0; i < n.spawnCount; i++) {
-                const zx = n.x + (Math.random() - 0.5) * 3;
-                const zz = n.z + (Math.random() - 0.5) * 2;
-                const speed = 0.06 + Math.random() * 0.03 + game.wave * 0.004;
-                const zmesh = createZombieMesh();
-                zmesh.position.set(zx, -1.8, zz);
-                zombieMeshes.push(zmesh);
-                zombies.push({ x: zx, z: zz, speed, mesh: zmesh, path: null, pathIndex: 0, pathTimer: 0, attacking: false, hp: 100, attackPhase: 'idle', attackTimer: 0, rising: true, riseTimer: 0 });
+                if (robe) {
+                    robe.material.emissive.set(0x000000);
+                    robe.material.emissiveIntensity = 0;
+                }
+                // Flash effect
+                if (orb) orb.scale.setScalar(3);
+                if (orbLight) orbLight.intensity = 6;
+                setTimeout(() => {
+                    if (orb) orb.scale.setScalar(1);
+                    if (orbLight) orbLight.intensity = 1;
+                }, 400);
+                // Spawn zombies near necromancer with rise animation
+                for (let i = 0; i < n.spawnCount; i++) {
+                    const zx = n.x + (Math.random() - 0.5) * 3;
+                    const zz = n.z + (Math.random() - 0.5) * 2;
+                    const speed = 0.06 + Math.random() * 0.03 + game.wave * 0.004;
+                    const zmesh = createZombieMesh();
+                    zmesh.position.set(zx, -1.8, zz);
+                    zombieMeshes.push(zmesh);
+                    zombies.push({ x: zx, z: zz, speed, mesh: zmesh, path: null, pathIndex: 0, pathTimer: 0, attacking: false, hp: 100, attackPhase: 'idle', attackTimer: 0, rising: true, riseTimer: 0 });
+                }
+                spawnDamageNumber(n.x, 3.0, n.z, '💀 SUMMON', '#bb44ff');
             }
+        } else if (n.spawnTimer >= n.spawnInterval) {
+            // Start casting animation
+            n.spawnTimer = 0;
+            n.casting = true;
+            n.castTimer = 0;
         }
 
         checkNecromancerPelletHits();
