@@ -5385,14 +5385,39 @@
             }
         });
 
+        // Check if a position is near a doorway (within a wall gap)
+        function isNearDoorway(x, z) {
+            for (const seg of wallSegments) {
+                if (seg.x1 === seg.x2) { // vertical wall
+                    if (Math.abs(x - seg.x1) < 2.0) {
+                        const minZ = Math.min(seg.z1, seg.z2);
+                        const maxZ = Math.max(seg.z1, seg.z2);
+                        if (z > minZ - 1.5 && z < maxZ + 1.5 && (z < minZ || z > maxZ)) return true;
+                    }
+                } else { // horizontal wall
+                    if (Math.abs(z - seg.z1) < 2.0) {
+                        const minX = Math.min(seg.x1, seg.x2);
+                        const maxX = Math.max(seg.x1, seg.x2);
+                        if (x > minX - 1.5 && x < maxX + 1.5 && (x < minX || x > maxX)) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
         for (let i = 0; i < zombies.length; i++) {
             const a = zombies[i];
             if (a.rising) continue;
             for (let j = i + 1; j < zombies.length; j++) {
                 const b = zombies[j];
                 if (b.rising) continue;
-                const ra = a.big || a.king || a.knight || a.tank ? 1.2 : 0.5;
-                const rb = b.big || b.king || b.knight || b.tank ? 1.2 : 0.5;
+                const aBig = a.big || a.king || a.knight || a.tank;
+                const bBig = b.big || b.king || b.knight || b.tank;
+                // Reduce separation radius for big zombies near doorways so they can queue through
+                const aInDoor = aBig && isNearDoorway(a.x, a.z);
+                const bInDoor = bBig && isNearDoorway(b.x, b.z);
+                const ra = aBig ? (aInDoor ? 0.55 : 1.2) : 0.5;
+                const rb = bBig ? (bInDoor ? 0.55 : 1.2) : 0.5;
                 const minDist = ra + rb;
                 const dx = b.x - a.x;
                 const dz = b.z - a.z;
@@ -5404,8 +5429,8 @@
                     a.x -= nx; a.z -= nz;
                     b.x += nx; b.z += nz;
                     // Re-apply wall collision to prevent pushing into walls
-                    const wa = a.big || a.king || a.knight || a.tank ? 0.7 : 0.4;
-                    const wb = b.big || b.king || b.knight || b.tank ? 0.7 : 0.4;
+                    const wa = aBig ? 0.7 : 0.4;
+                    const wb = bBig ? 0.7 : 0.4;
                     const ca = collideWalls(a.x, a.z, wa);
                     const cb = collideWalls(b.x, b.z, wb);
                     a.x = ca.x; a.z = ca.z;
